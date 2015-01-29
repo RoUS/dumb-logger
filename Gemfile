@@ -30,5 +30,6 @@ group(:test, :development) do
   gem('redcarpet',	'< 3.0.0')
   gem('test-unit',
       :require		=> 'test/unit')
+  gem('rdoc')
   gem('yard',		'~> 0.8.6')
 end

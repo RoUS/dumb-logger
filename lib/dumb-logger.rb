@@ -1,4 +1,4 @@
-# -*- coding: undecided -*-
+# -*- coding: utf-8 -*-
 #--
 #   Copyright © 2015 Ken Coar
 #
@@ -43,7 +43,7 @@ class DumbLogger
         obj.sink.close
       end
     end                         # def finalize
-  end                           # class DubmLogger eigenclass
+  end                           # class DumbLogger eigenclass
 
   #
   # Message flag for "do not append a newline".
@@ -63,8 +63,9 @@ class DumbLogger
   #
   # @!attribute [rw] loglevel
   #
-  # Current reporting criteria; either a simple integer or a bitmask
-  # (see #level_style).
+  # Current reporting criteria; either a simple integer or a bitmask.
+  #
+  # @see #level_style
   #
   # If loglevels are being treated as integers, this is the maximum
   # level that will reported; that is, if a message is submitted with
@@ -81,6 +82,19 @@ class DumbLogger
   attr_reader(:loglevel)
 
   attr_reader(:level_style)
+
+  #
+  # @!attribute [rw] level_style
+  #
+  # Control whether loglevels are treated as ascending integers, or as
+  # bitmasks.
+  #
+  # @param [Symbol] style
+  #  Either +USE_LEVELS+ or +USE_BITMASK+.
+  #
+  # @return [Symbol]
+  #  Returns the current setting.
+  #
   def level_style=(style)
     unless ([ USE_LEVELS, USE_BITMASK ].include?(style))
       raise ArgumentError.new('invalid loglevel style')
@@ -140,7 +154,7 @@ class DumbLogger
 
   #
   # The #sink writer has special requirements, so we define it
-  # explicitly.  See #sink for full documentation.
+  # explicitly.  See {#sink} for full documentation.
   #
   # @return [IO]
   #  Returns the sink IO object.
@@ -175,7 +189,7 @@ class DumbLogger
   # @option args [IO,String] :sink ($stderr)
   #  Where reports should be sent.
   # @option args [Integer] :loglevel (0)
-  #  Maximum log level for reports.  See #loglevel.
+  #  Maximum log level for reports.  See {#loglevel}.
   # @option args [Symbol] :level_style (USE_LEVELS)
   #  Whether message loglevels should be treated as integer levels or
   #  as bitmasks.
@@ -202,8 +216,13 @@ class DumbLogger
   #  Sets or returns the append-on-write control value.
   #
   def append
-    return @options[:append] ? true : false
+    return (@options[:append] ? true : false)
   end                           # def append
+
+  def append=(arg)
+    @options[:append]	= (arg ? true : false)
+    return self.append
+  end                           # def append=
 
   #
   # @return [Boolean]
@@ -213,11 +232,6 @@ class DumbLogger
   def append?
     return self.append
   end                           # def append?
-
-  def append=(arg)
-    @options[:append]	= (arg ? true : false)
-    return self.append
-  end                           # def append=
 
   #
   # Submit a report for possible transmission.
@@ -241,7 +255,12 @@ class DumbLogger
   #
   # @return [nil,Integer]
   #  Returns either +nil+ if the message's loglevel is higher than the
-  #  reporting level, or the level of the message if it was reported.
+  #  reporting level, or the level of the report.
+  #
+  #  If integer levels are being used, a non-+nil+ return value is
+  #  that of the message.  If bitmask levels are being used, the
+  #  return value is a mask of the active level bits that applied to
+  #  the message (_i.e._, +msg_bits & logging_mask+).
   #
   def message(*args)
     #
@@ -259,12 +278,13 @@ class DumbLogger
       if (cur_style == USE_LEVELS)
         return nil if (cur_loglevel < level)
       elsif (cur_style == USE_BITMASK)
-        return nil if ((level & cur_level).zero?)
+        return nil if ((level = level & cur_level).zero?)
       end
     end
     prefix_text		= hashopts[:prefix] || self.prefix
     text		= prefix_text + args.join("\n#{prefix_text}")
-    if ((symopts & [ NO_NL, :no_eol, :nonl, :no_nl ]).empty?)
+    if ((! hashopts[:newline]) \
+        && (symopts & [ NO_NL, :no_eol, :nonl, :no_nl ]).empty?)
       self.sink.puts(text)
     else
       self.sink.print(text)
