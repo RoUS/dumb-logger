@@ -25,6 +25,7 @@ group(:default, :development, :test) do
 end
 
 group(:test, :development) do
+  gem('aruba')
   gem('cucumber')
   gem('rake')
   gem('redcarpet',	'< 3.0.0')

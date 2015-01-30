@@ -41,8 +41,8 @@ Rake::TestTask.new do |test|
   test.verbose	= true
 end
 
-#require('cucumber/rake/task')
-#Cucumber::Rake::Task.new(:features)
+require('cucumber/rake/task')
+Cucumber::Rake::Task.new(:features)
 
 task(:default => :test)
 
