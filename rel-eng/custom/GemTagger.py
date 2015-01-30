@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright © (c) 2015 Ken Coar
 #
 # This software is licensed to you under the GNU General Public License,
