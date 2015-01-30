@@ -1,29 +1,29 @@
 %global	gem_name	dumb-logger
-%global	rubyabi	1.9.1
+%global	rubyabi		1.9.1
 
-Name:           rubygem-%{gem_name}
-Version:        0.0.0
-Release:        1%{?dist}
+Name:		rubygem-%{gem_name}
+Version:	0.0.0
+Release:	1%{?dist}
 
-Summary:        A very basic level-or-mask status logger.
+Summary:	A very basic level-or-mask status logger.
 
-Group:          Development/Languages
+Group:		Development/Languages
 
-License:        Apache 2.0 or GPLv2
-URL:            git@github.com:RoUS/dumb-logger.git
-Source0:        http://gems.rubyforge.org/gems/%{gem_name}-%{version}.gem
+License:	Apache 2.0 or GPLv2
+URL:		git@github.com:RoUS/dumb-logger.git
+Source0:	%{gem_name}-%{version}.gem
 
 BuildRequires:	ruby(abi) = %{rubyabi}
 BuildRequires:	ruby-devel
-BuildRequires:  rubygems-devel
-BuildRequires:  rubygem(rake)
+BuildRequires:	rubygems-devel
+BuildRequires:	rubygem(rake)
 BuildRequires:	rubygem(aruba)
 BuildRequires:	rubygem(bundler)
 BuildRequires:	rubygem(cucumber)
 BuildRequires:	rubygem(yard)
-Requires:       ruby(abi) = %{rubyabi}
-Requires:       rubygems
-Provides:       rubygem(dumb-logger) = %{version}
+Requires:	ruby(abi) = %{rubyabi}
+Requires:	rubygems
+Provides:	rubygem(dumb-logger) = %{version}
 
 
 %description
@@ -81,15 +81,6 @@ popd
 %{gem_instdir}/lib/%{gem_name}.rb
 %{gem_instdir}/lib/%{gem_name}/version.rb
 %{gem_spec}
-
-
-%files      doc
-%defattr(-,root,root,-)
-%{gem_instdir}/Rakefile
-%{gem_instdir}/features
-%{gem_instdir}/tests
-%{gem_instdir}/*gemspec
-%{gem_docdir}/
 
 
 %changelog
