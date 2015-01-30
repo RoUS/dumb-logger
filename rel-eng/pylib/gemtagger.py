@@ -39,16 +39,16 @@ from tito.common import (debug, error_out, run_command,
 from tito.compat import *
 from tito.exception import TitoException
 from tito.config_object import ConfigObject
-from tito.tagger import ReleaseTagger
+from tito.tagger import VersionTagger
 
-class GemTagger(ReleaseTagger):
+class GemTagger(VersionTagger):
     """
     Releases will be tagged by obtaining the value of the VERSION constant
     from the gem.
     """
 
     def __init__(self, config=None, keep_version=False, offline=False, user_config=None):
-        ReleaseTagger.__init__(self, config=config)
+        VersionTagger.__init__(self, config=config)
         self.gemspec_file_name = find_file_with_extension(suffix=".gemspec")
 
     def _tag_release(self):
