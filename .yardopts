@@ -1,0 +1,6 @@
+--title 'DumbLogger Simple Logger'
+--no-private
+--charset utf-8
+--markup markdown
+--files 'LICENCE*'
+'lib/**/*.rb'

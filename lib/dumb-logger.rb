@@ -67,7 +67,7 @@ class DumbLogger
   # bitmasks.
   #
   # @return [Symbol]
-  #  Returns the current setting (either +USE_LEVELS+ or +USE_BITMASK+).
+  #  Returns the current setting (either {USE_LEVELS} or {USE_BITMASK}).
   #
   # @raise [ArgumentError]
   #  Raises an *ArgumentError* exception if the style isn't
@@ -154,6 +154,63 @@ class DumbLogger
   end                           # def log_masks?
 
   #
+  # Allow the user to name different log levels or mask combinations.
+  # All names will be downcased and converted to symbols.
+  #
+  # In addition, the names are added to the instance as methods that
+  # will log messages with the specified level.
+  #
+  # @see #named_levels
+  #
+  # @param [Hash] namehash
+  #  Hash of names or symbols and the integer log levels/masks they're
+  #  labelling.
+  #
+  # @return [Hash<Symbol=>Integer>]
+  #  Returns a hash of the names (as symbols) and levels/masks that
+  #  have been assigned.
+  #
+  # @raise [ArgumentError]
+  #
+  def name_levels(namehash)
+    unless (namehash.kind_of?(Hash))
+      raise ArgumentError.new('level names must be supplied as a hash')
+    end
+    unless (namehash.values.all? { |o| o.kind_of?(Integer) })
+      raise ArgumentError.new('named levels must be integers')
+    end
+    newhash = namehash.inject({}) { |memo,(name,level)|
+      name_sym = name.to_s.downcase.to_sym
+      memo[name_sym] = level
+      memo
+    }
+    @options[:names].merge!(newhash)
+    newhash.each do |name,level|
+      self.define_singleton_method(name) do |*args|
+        (scratch, newargs) = args.partition { |o| o.kind_of?(Integer) }
+        return self.message(level, *newargs)
+      end
+    end
+    return newhash
+  end                           # def name_levels
+
+  #
+  # Return a list of all the levels or bitmasks that have been named.
+  # The return value is suitable for use as input to the #name_levels
+  # method of this or another instance of this class.
+  #
+  # @see #name_levels
+  #
+  # @return [Hash<Symbol=>Integer>]
+  #  Returns a hash of names (as symbols) and the log levels they
+  #  identify.
+  #
+  def named_levels
+    return Hash[@options[:names].sort].freeze
+  end                           # def named_levels
+
+  # @private
+  #
   # List of option keys settable in the constructor.
   #
   CONSTRUCTOR_OPTIONS	= [
@@ -161,6 +218,7 @@ class DumbLogger
                            :level_style,
                            :loglevel,
                            :logmask,
+                           :names,
                            :prefix,
                            :sink,
                           ]
@@ -287,7 +345,9 @@ class DumbLogger
     unless (args.kind_of?(Hash))
       raise ArgumentError.new("#{self.class.name}.new requires a hash")
     end
-    @options = {}
+    @options = {
+      :names		=> {},
+    }
     #
     # Here are the default settings for a new instance with no
     # arguments.  We put 'em here so they don't show up in docco under
@@ -295,9 +355,9 @@ class DumbLogger
     #
     default_opts	= {
       :append		=> true,
-      :prefix		=> '',
       :level_style	=> USE_LEVELS,
       :loglevel		=> 0,
+      :prefix		=> '',
       :sink		=> $stderr,
     }
     #
@@ -367,14 +427,17 @@ class DumbLogger
   end                           # def append?
 
   #
-  # Submit a report for possible transmission.
-  # The argument is an array of strings, integers, and/or symbols.
-  # Reports with a loglevel of zero (the default) are *always*
-  # transmitted.
+  # Submit a report for possible transmission.  The argument is an
+  # array of arrays, strings, integers, and/or symbols.  Reports with
+  # a loglevel of zero (the default) are *always* transmitted.
   #
-  # @param [Array<String,Symbol,Integer,Hash>] args
+  # @param [Array<Array,String,Symbol,Integer,Hash>] args
   #  * The last integer in the array will be treated as the report's
   #    loglevel; default is +0+.
+  #  * Any +Array+ elements in the arguments will be merged and the
+  #    values interpreted as level names (see {#name_levels}).  If
+  #    loglevels are bitmasks, the named levels are ORed together;
+  #    otherwise the lowest named level will be used for the message.
   #  * Any +Hash+ elements in the array will be merged and will
   #    temporarily override instance-wide options (_e.g._,
   #    <code>{ :prefix => 'alt' }</code> ).
@@ -401,6 +464,12 @@ class DumbLogger
     # list.  This makes the calling format very flexible.
     #
     (symopts, args)	= args.partition { |elt| elt.kind_of?(Symbol) }
+    if (no_nl = symopts.include?(NO_NL))
+      symopts.delete(NO_NL)
+    end
+    symlevels		= (symopts & self.named_levels.keys).map { |o|
+      self.named_levels[o]
+    }.compact
     (hashopts, args)	= args.partition { |elt| elt.kind_of?(Hash) }
     hashopts		= hashopts.reduce(:merge) || {}
     (level, args)	= args.partition { |elt| elt.kind_of?(Integer) }
@@ -408,10 +477,11 @@ class DumbLogger
     cur_loglevel	= self.loglevel
     cur_style		= self.level_style
     unless (level.zero?)
-      if (cur_style == USE_LEVELS)
-        return nil if (cur_loglevel < level)
-      elsif (cur_style == USE_BITMASK)
-        return nil if ((level = level & cur_level).zero?)
+      if (self.log_levels?)
+        return nil if ([ cur_loglevel, *symlevels ].min < level)
+      elsif (self.log_masks?)
+        level = [ level, *symlevels ].reduce(:|) & cur_level
+        return nil if (level.zero?)
       end
     end
     prefix_text		= hashopts[:prefix] || self.prefix
