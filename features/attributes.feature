@@ -1,4 +1,4 @@
-Feature: Test basic functionality
+Feature: Test default attributes and setting/pinging them
   In order to use the basic functionality of the DumbLogger class
   A developer
   Should be able to manipulate all of the logger's attributes
@@ -18,7 +18,7 @@ Feature: Test basic functionality
 
   Scenario: Check the defaults
     Then the log-level should be 0
-    And the sink should be $stderr
+    And the sink should be :$stderr
     And the style should be DumbLogger::USE_LEVELS
     And the prefix should be ''
     And append-mode should be true
@@ -64,22 +64,7 @@ Feature: Test basic functionality
     And the sink should be '/dev/null'
 
   Scenario: Test changing the sink to stdout
-    When I set attribute 'sink' to $stdout
-    Then the return value should be $stdout
-    And the sink should be $stdout
+    When I set attribute 'sink' to :$stdout
+    Then the return value should be :$stdout
+    And the sink should be :$stdout
 
-  Scenario: Default Level-0 text always gets sent (returns 0)
-    pending
-    # When I invoke the logger with ("a message")
-    # Then the stderr should contain exactly:
-    #   """
-    #   a message
-    #   """
-
-  Scenario: Explicit level-too-high text doesn't get sent (returns nil)
-    When I set attribute 'loglevel' to 5
-    And I invoke the logger with (6, "a message")
-    Then the return value should be nil
-    And the stderr should contain exactly:
-      """
-      """

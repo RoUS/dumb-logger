@@ -46,13 +46,13 @@ Global options that can be set with #new include:
 * where messages should be sent (the sink); and
 * a string that should be prefixed to each line written to the sink.
 
-You can define names for logging level values, so you can use them in
-subsequent calls.  In addition, defining a named level creates that
-method on the instance tied to that level.  That is, these are
+You can define labels (names) for logging level values, so you can use
+them in subsequent calls.  In addition, defining a named level creates
+that method on the instance tied to that level.  That is, these are
 equivalent:
 
 ```
-daml = DumbLogger.new(:names => { :info => 0, :debug => 4 })
+daml = DumbLogger.new(:labels => { :info => 0, :debug => 4 })
 daml.info('Level 0 message')
 daml.debug('Level 4 message')
 

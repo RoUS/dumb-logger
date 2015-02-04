@@ -4,3 +4,4 @@
 --markup markdown
 --files 'LICENCE*'
 'lib/**/*.rb'
+'features/**/*.rb'

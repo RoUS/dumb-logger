@@ -22,6 +22,8 @@ require('dumb-logger/version')
 # according to the verbosity level.  Very simple, not a complete
 # logger at all.
 #
+# @todo Allow assignment of prefices to levels the way we now do labels.
+#
 class DumbLogger
 
   #
@@ -59,6 +61,14 @@ class DumbLogger
   # Treat loglevel numbers as actual levels.
   #
   USE_LEVELS	= :loglevels_are_numbers
+
+  #
+  # Special sink values, which will get evaluated on every transmission.
+  #
+  SPECIAL_SINKS	= [
+                   :$stdout,
+                   :$stderr,
+                  ]
 
   #
   # @!attribute [rw] level_style
@@ -154,60 +164,61 @@ class DumbLogger
   end                           # def log_masks?
 
   #
-  # Allow the user to name different log levels or mask combinations.
-  # All names will be downcased and converted to symbols.
+  # Allow the user to assign labels to different log levels or mask
+  # combinations.  All labels will be downcased and converted to
+  # symbols.
   #
-  # In addition, the names are added to the instance as methods that
+  # In addition, the labels are added to the instance as methods that
   # will log messages with the specified level.
   #
-  # @see #named_levels
+  # @see #labeled_levels
   #
-  # @param [Hash] namehash
+  # @param [Hash<<String,Symbol>=>Integer>] labelhash
   #  Hash of names or symbols and the integer log levels/masks they're
   #  labelling.
   #
   # @return [Hash<Symbol=>Integer>]
-  #  Returns a hash of the names (as symbols) and levels/masks that
+  #  Returns a hash of the labels (as symbols) and levels/masks that
   #  have been assigned.
   #
   # @raise [ArgumentError]
   #
-  def name_levels(namehash)
-    unless (namehash.kind_of?(Hash))
-      raise ArgumentError.new('level names must be supplied as a hash')
+  def label_levels(labelhash)
+    unless (labelhash.kind_of?(Hash))
+      raise ArgumentError.new('level labels must be supplied as a hash')
     end
-    unless (namehash.values.all? { |o| o.kind_of?(Integer) })
-      raise ArgumentError.new('named levels must be integers')
+    unless (labelhash.values.all? { |o| o.kind_of?(Integer) })
+      raise ArgumentError.new('labeled levels must be integers')
     end
-    newhash = namehash.inject({}) { |memo,(name,level)|
-      name_sym = name.to_s.downcase.to_sym
-      memo[name_sym] = level
+    newhash = labelhash.inject({}) { |memo,(label,level)|
+      label_sym = label.to_s.downcase.to_sym
+      memo[label_sym] = level
       memo
     }
-    @options[:names].merge!(newhash)
-    newhash.each do |name,level|
-      self.define_singleton_method(name) do |*args|
+    @options[:labels].merge!(newhash)
+    newhash.each do |label,level|
+      self.define_singleton_method(label) do |*args|
         (scratch, newargs) = args.partition { |o| o.kind_of?(Integer) }
         return self.message(level, *newargs)
       end
     end
     return newhash
-  end                           # def name_levels
+  end                           # def label_levels
 
   #
-  # Return a list of all the levels or bitmasks that have been named.
-  # The return value is suitable for use as input to the #name_levels
+  # Return a list of all the levels or bitmasks that have been labeled.
+  # The return value is suitable for use as input to the #label_levels
   # method of this or another instance of this class.
   #
-  # @see #name_levels
+  # @see #label_levels
   #
   # @return [Hash<Symbol=>Integer>]
-  #  Returns a hash of names (as symbols) and the log levels they
+  #  Returns a hash of labels (as symbols) and the log levels they
   #  identify.
   #
-  def named_levels
-    return Hash[@options[:names].sort].freeze
-  end                           # def named_levels
+  def labeled_levels
+    return Hash[@options[:labels].sort].freeze
+  end                           # def labeled_levels
 
   # @private
   #
@@ -218,7 +229,7 @@ class DumbLogger
                            :level_style,
                            :loglevel,
                            :logmask,
-                           :names,
+                           :labels,
                            :prefix,
                            :sink,
                           ]
@@ -279,16 +290,21 @@ class DumbLogger
   #
   # Sets or returns the sink to which we send our messages.
   #
-  # When setting the sink, the value can be either an IO instance or a
-  # string.  If a string, the +:append+ flag from the instance options
-  # is used to determine whether the file will be rewritten from the
-  # beginning, or just have text appended to it.
-  # 
+  # When setting the sink, the value can be an IO instance, a special
+  # symbol, or a string.  If a string, the +:append+ flag from the
+  # instance options is used to determine whether the file will be
+  # rewritten from the beginning, or just have text appended to it.
+  #
+  # Sinking to one of the special symbols (+:$stderr+ or +:$stdout+;
+  # see {SPECIAL_SINKS}) results in the sink being re-evaluated at
+  # each call to {#message}.  This is useful if these streams might be
+  # altered after the logger has been instantiated.
+  #
   # The #sink writer has special requirements, so we define it
   # explicitly.
   #
-  # @return [IO,String]
-  #  Returns the sink path or IO object.
+  # @return [IO,String,Symbol]
+  #  Returns the sink path, special name, or IO object.
   #
   def sink=(arg)
     if (@options[:needs_close] \
@@ -297,12 +313,23 @@ class DumbLogger
       @sink_io.close unless (@sink_io.closed?)
       @sink_io = nil
     end
-    #
-    # If it's an IO, then we assume it's already open.
-    #
+
+    @options[:volatile] = false
     if (arg.kind_of?(IO))
+      #
+      # If it's an IO, then we assume it's already open.
+      #
       @options[:sink] = @sink_io = arg
       @options[:needs_close] = false
+    elsif (SPECIAL_SINKS.include?(arg))
+      #
+      # If it's one of our special symbols, we don't actually do
+      # anything except record the fact -- because they get
+      # interpreted at each #message call.
+      #
+      @options[:sink] = arg
+      @sink_io = nil
+      @options[:volatile] = true
     else
       #
       # If it's a string, we treat it as a file name, open it, and
@@ -328,7 +355,7 @@ class DumbLogger
   #  If true, any files opened will have reported text appended to them.
   # @option args [String] :prefix ('')
   #  String to insert at the beginning of each line of report text.
-  # @option args [IO,String] :sink ($stderr)
+  # @option args [IO,String] :sink (:$stderr)
   #  Where reports should be sent.
   # @option args [Integer] :loglevel (0)
   #  Maximum log level for reports.  See {#loglevel}.
@@ -346,7 +373,7 @@ class DumbLogger
       raise ArgumentError.new("#{self.class.name}.new requires a hash")
     end
     @options = {
-      :names		=> {},
+      :labels		=> {},
     }
     #
     # Here are the default settings for a new instance with no
@@ -358,7 +385,7 @@ class DumbLogger
       :level_style	=> USE_LEVELS,
       :loglevel		=> 0,
       :prefix		=> '',
-      :sink		=> $stderr,
+      :sink		=> :$stderr,
     }
     #
     # Make a new hash merging the user arguments on top of the
@@ -435,9 +462,9 @@ class DumbLogger
   #  * The last integer in the array will be treated as the report's
   #    loglevel; default is +0+.
   #  * Any +Array+ elements in the arguments will be merged and the
-  #    values interpreted as level names (see {#name_levels}).  If
-  #    loglevels are bitmasks, the named levels are ORed together;
-  #    otherwise the lowest named level will be used for the message.
+  #    values interpreted as level labels (see {#label_levels}).  If
+  #    loglevels are bitmasks, the labeled levels are ORed together;
+  #    otherwise the lowest labeled level will be used for the message.
   #  * Any +Hash+ elements in the array will be merged and will
   #    temporarily override instance-wide options (_e.g._,
   #    <code>{ :prefix => 'alt' }</code> ).
@@ -467,8 +494,8 @@ class DumbLogger
     if (no_nl = symopts.include?(NO_NL))
       symopts.delete(NO_NL)
     end
-    symlevels		= (symopts & self.named_levels.keys).map { |o|
-      self.named_levels[o]
+    symlevels		= (symopts & self.labeled_levels.keys).map { |o|
+      self.labeled_levels[o]
     }.compact
     (hashopts, args)	= args.partition { |elt| elt.kind_of?(Hash) }
     hashopts		= hashopts.reduce(:merge) || {}
@@ -488,10 +515,11 @@ class DumbLogger
     text		= prefix_text + args.join("\n#{prefix_text}")
     if ((! hashopts[:newline]) \
         && (symopts & [ NO_NL, :no_eol, :nonl, :no_nl ]).empty?)
-      self.sink.puts(text)
-    else
-      self.sink.print(text)
+      text << "\n"
     end
+    stream = @options[:volatile] ? eval(self.sink.to_s) : @sink_io
+    stream.print(text)
+    stream.flush if (@options[:volatile])
     return level
   end                           # def message
 

@@ -23,31 +23,39 @@ And /^the loglevel is set to (\d+)$/ do |level|
 end
 
 And /^I invoke the logger with \((.*)\)$/ do |args|
-  @return_value = eval("@duml.message(#{args})")
+  traffic = capture_streams(:$stdout, :$stderr) {
+    @return_value = eval("@duml.message(#{args})")
+  }
+  @stdout_text = traffic[:$stdout]
+  @stderr_text = traffic[:$stderr]
 end
 
-Then /^the return value should be (.*)$/ do |expected_val|
-  expect(@return_value).to eq eval(expected_val)
+Then /^stderr should contain exactly (.+)$/ do |xval|
+  expect(@stderr_text).to eq eval(xval)
 end
 
-Then /^the (?:log-level|logging-mask) should\s+(?:still)?\s*be (\d+)$/ do |expected_val|
-  expect(@duml.loglevel).to eq expected_val.to_i
+Then /^the return value should be (.*)$/ do |xval|
+  expect(@return_value).to eq eval(xval)
 end
 
-Then /^the sink should be (.+)$/ do |expected_val|
-  expect(@duml.sink).to eq eval(expected_val)
+Then /^the (?:log-level|logging-mask) should\s+(?:still)?\s*be (\d+)$/ do |xval|
+  expect(@duml.loglevel).to eq xval.to_i
 end
 
-Then /^the style should be (.+)$/ do |expected_val|
-  expect(@duml.level_style).to eq eval(expected_val)
+Then /^the sink should be (.+)$/ do |xval|
+  expect(@duml.sink).to eq eval(xval)
 end
 
-Then /^the prefix should be (.+)$/ do |expected_val|
-  expect(@duml.prefix).to eq eval(expected_val)
+Then /^the style should be (.+)$/ do |xval|
+  expect(@duml.level_style).to eq eval(xval)
 end
 
-Then /^append-mode should be (.+)$/ do |expected_val|
-  expect(@duml.append?).to eq eval(expected_val)
+Then /^the prefix should be (.+)$/ do |xval|
+  expect(@duml.prefix).to eq eval(xval)
+end
+
+Then /^append-mode should be (.+)$/ do |xval|
+  expect(@duml.append?).to eq eval(xval)
 end
 
 When /^I query attribute ["']?([_A-Za-z0-9?]+)["']?$/ do |attr|
@@ -63,6 +71,6 @@ When /^I set attribute ["']?([_A-Za-z0-9]+)["']? to (.+?)$/ do |attr,val|
   end
 end
 
-Then /^it should raise an exception of type (\S+)$/ do |expected_val|
-  expect(@exception_raised.class).to eq eval(expected_val)
+Then /^it should raise an exception of type (\S+)$/ do |xval|
+  expect(@exception_raised.class).to eq eval(xval)
 end

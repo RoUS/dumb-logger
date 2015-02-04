@@ -14,6 +14,7 @@ group(:default, :development, :test) do
   gem('debugger',	'>= 0',
       :platforms	=> [
                             :mri_19,
+                            :mri_20,
                            ])
   gem('ruby-debug',	'>= 0',
       :platforms	=> [
