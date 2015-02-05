@@ -18,7 +18,7 @@ And(/^the prefix is set to "([^"]*)"$/) do |prefix|
   @return_value = @duml.prefix			= prefix
 end
 
-And(/^the loglevel is set to (\d+)$/) do |level|
+And(/^the loglevel is set to (\S+)$/) do |level|
   @return_value = @duml.loglevel		= level.to_i
 end
 

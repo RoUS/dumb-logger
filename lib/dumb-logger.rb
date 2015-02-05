@@ -507,7 +507,7 @@ class DumbLogger
       if (self.log_levels?)
         return nil if ([ cur_loglevel, *symlevels ].min < level)
       elsif (self.log_masks?)
-        level = [ level, *symlevels ].reduce(:|) & cur_level
+        level = [ level, *symlevels ].reduce(:|) & cur_loglevel
         return nil if (level.zero?)
       end
     end
