@@ -1,7 +1,7 @@
 Feature: Test reporting using numeric levels
   In order to use the basic functionality of the DumbLogger class
   A developer
-  Should be able to manipulate all of the logger's attributes
+  Should be able to specify at what levels messages should be written
 
   Background:
     Given I have a DumbLogger object
@@ -11,13 +11,28 @@ Feature: Test reporting using numeric levels
 
   Scenario: Default Level-0 1-liner text always gets sent and returns 0)
     When I invoke the logger with ("a message")
-    Then stderr should contain exactly "a message\n"
-    And the return value should be 0
+    Then the return value should be 0
+    And stderr should contain exactly:
+      """
+      a message
+
+      """
+      #
+      # Note the final blank line above indicating the trailing newline
+      #
 
   Scenario: Default Level-0 multi-line text always gets sent and returns 0
-    When I invoke the logger with ("a message line 1","and now line 2")
-    Then stderr should contain exactly "a message line 1\nand now line 2\n"
-    And the return value should be 0
+    When I invoke the logger with ("a message line 1","message line 2")
+    Then the return value should be 0
+    And stderr should contain exactly:
+      """
+      a message line 1
+      message line 2
+
+      """
+      #
+      # Note the final blank line above indicating the trailing newline
+      #
 
   Scenario: Explicit level-too-high 1-liner text is ignored and returns nil
     When I invoke the logger with (6, "a message")
@@ -25,7 +40,7 @@ Feature: Test reporting using numeric levels
     And the return value should be nil
 
   Scenario: Explicit level-too-high multi-line text is ignored and returns nil
-    When I invoke the logger with (6, "a message line 1", "and now line 2")
+    When I invoke the logger with (6, "a message line 1", "message line 2")
     Then stderr should contain exactly ""
     And the return value should be nil
 

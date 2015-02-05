@@ -11,11 +11,11 @@ is greater than or equal to the message's, the text will be written to
 the logging sink.
 
 Alternatively, you can instead treat logging levels as bitmasks
-(_e.g._, "bit 3 means log network activity"), and messages will be
+(*e.g.*, "bit 3 means log network activity"), and messages will be
 sent to the logging sink if any of the set bits in their mask are also
 set in the logger's mask.
 
-Messages with a loglevel (or mask) of +0+ **always** get written to
+Messages with a loglevel (or mask) of `0` **always** get written to
 the sink.
 
 By default, `DumbLogger` uses a sink of `$stderr`, but you can tell it
@@ -25,8 +25,14 @@ content, but you can cause it to rewind and truncate the file before
 writing.  If you change sinks and the current one was opened as a
 file, it will be closed before switching to the new sink.
 
-Sinks can be either filenames or streams (instances of `IO`);
+Sinks can be filenames, symbols, or streams (instances of `IO`);
 append-mode doesn't apply to streams.
+
+Two special sink symbols are recognised: **:$stderr** and
+**:$stdout**.  Assigning the logger sink to either of these will
+result in the sink stream being re-evaluated on each and every message
+transmission.  This can be useful if `$stderr` or `$stdout` might get
+redirected during application operation.
 
 Text is logged using the `#message` method, which takes an arbitrary
 number of strings, symbols, integers, and hashes as arguments.
@@ -38,7 +44,7 @@ number of strings, symbols, integers, and hashes as arguments.
 * If the argument contains multiple strings, each one will be written
   on a separate line.
 
-Global options that can be set with #new include:
+Global options that can be set with `#new` include:
 
 * whether files should be opened in append mode;
 * whether loglevels are integers or bitmasks; 
