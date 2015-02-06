@@ -22,14 +22,25 @@ require('dumb-logger/version')
 # according to the verbosity level.  Very simple, not a complete
 # logger at all.
 #
-# @todo Allow assignment of prefices to levels the way we now do labels.
+# @todo
+#  Allow assignment of prefices to levels the way we now do labels.
+#  Will probably only work with level-based reporting, since
+#  mask-based reports may get transmitted due to a mask `AND` that
+#  doesn't match any named masks.
+#
+# @todo
+#  Add a `:seek_to_eof` option so that text written to a sink is
+#  *always* possitioned after any data written by other processes.
+#  (Except on the first write to a file in truncation `:append => false`
+#  mode, of course.)
 #
 class DumbLogger
 
   #
   # class DumbLogger eigenclass.
+  #
   # Since we may have had to open up a file, make sure closing it
-  # again is part of our teardown process.
+  # again is part of the instance teardown process.
   #
   class << self
     #
@@ -37,7 +48,7 @@ class DumbLogger
     # closed (usually because we opened it ourself), close it as part
     # of the DumbLogger object teardown.
     #
-    # @param [Reporter] obj
+    # @param [DumbLogger] obj
     #  Instance being torn down ('destructed').
     #
     def finalize(obj)
@@ -83,16 +94,16 @@ class DumbLogger
   #  Raises an *ArgumentError* exception if the style isn't
   #  recognised.
   #
+  def level_style
+    return @options[:level_style]
+  end                           # def level_style
+
   def level_style=(style)
     unless ([ USE_LEVELS, USE_BITMASK ].include?(style))
       raise ArgumentError.new('invalid loglevel style')
     end
     @options[:level_style] = style
   end                           # def level_style=
-
-  def level_style
-    return @options[:level_style]
-  end                           # def level_style
 
   #
   # @!attribute [rw] loglevel
@@ -106,8 +117,8 @@ class DumbLogger
   # reported only if submitted with a loglevel which has at least one
   # bit set that is also set in the instance loglevel.
   #
-  # When used as an attribute writer (_e.g._, +obj.loglevel = val+),
-  # the argumen will be treated as an integer.
+  # When used as an attribute writer (*e.g.*, `obj.loglevel = val`),
+  # the argument will be treated as an integer.
   #
   # @return [Integer]
   #  Returns the maximum loglevel/logging mask in effect henceforth.
@@ -130,14 +141,12 @@ class DumbLogger
   alias_method(:logmask, :loglevel)
 
   #
-  # Determine how loglevel numbers are interpreted.  (See
-  # {#level_style} for more information.)
-  #
-  # Returns +true+ if they're treated as integers rather than bitmasks.
+  # Returns `true` if loglevel numbers are interpreted as integers
+  # rather than bitmasks.  (See {#level_style} for more information.)
   #
   # @return [Boolean]
-  #  Returns +true+ if loglevels are regarded as integers rather than
-  #  bitmasks, or +false+ otherwise.
+  #  Returns `true` if loglevels are regarded as integers rather than
+  #  bitmasks, or `false` otherwise.
   #
   # @see #log_masks?
   # @see #level_style
@@ -147,14 +156,17 @@ class DumbLogger
   end                           # def log_levels?
 
   #
+  # Returns `true` if loglevel numbers are interpreted as bitmasks
+  # rather than integers.  (See {#level_style} for more information.)
+  #
   # Determine how loglevel numbers are interpreted.  (See
   # {#level_style} for more information.)
   #
-  # Returns +true+ if they're treated as bitmasks rather than integers.
+  # Returns `true` if they're treated as bitmasks rather than integers.
   #
   # @return [Boolean]
-  #  Returns +true+ if loglevels are regarded as bitmasks rather than
-  #  integers, or +false+ otherwise.
+  #  Returns `true` if loglevels are regarded as bitmasks rather than
+  #  integers, or `false` otherwise.
   #
   # @see #log_levels?
   # @see #level_style
@@ -173,15 +185,17 @@ class DumbLogger
   #
   # @see #labeled_levels
   #
-  # @param [Hash<<String,Symbol>=>Integer>] labelhash
+  # @param [Hash{String,Symbol=>Integer}] labelhash
   #  Hash of names or symbols and the integer log levels/masks they're
   #  labelling.
   #
-  # @return [Hash<Symbol=>Integer>]
+  # @return [Hash<Symbol,Integer>]
   #  Returns a hash of the labels (as symbols) and levels/masks that
   #  have been assigned.
   #
   # @raise [ArgumentError]
+  #  Raises an *ArgumentError* exception if the argument isn't a hash
+  #  with integer values.
   #
   def label_levels(labelhash)
     unless (labelhash.kind_of?(Hash))
@@ -212,7 +226,7 @@ class DumbLogger
   #
   # @see #label_levels
   #
-  # @return [Hash<Symbol=>Integer>]
+  # @return [Hash<Symbol,Integer>]
   #  Returns a hash of labels (as symbols) and the log levels they
   #  identify.
   #
@@ -237,7 +251,7 @@ class DumbLogger
   #
   # @!attribute [r] options
   #
-  # Options controlling various aspects of our operation.
+  # Options controlling various aspects of `DumbLogger`'s operation.
   #
   # @return [Hash]
   #  Returns current set of DumbLogger options for the instance.
@@ -252,24 +266,29 @@ class DumbLogger
   # Prefix string to be inserted at the beginning of each line of
   # output we emit.
   #
+  # @note
+  #  This can be overridden at runtime *via* the `:prefix` option hash
+  #  element to the {#message} method (*q.v.*).
+  #
   # @return [String]
   #  Sets or returns the prefix string to be used henceforth.
   #
-  def prefix=(arg)
-    @options[:prefix] = arg.to_s
-    return self.prefix
-  end                           # def prefix=
   def prefix
     return @options[:prefix]
   end                           # def prefix
 
+  def prefix=(arg)
+    @options[:prefix] = arg.to_s
+    return self.prefix
+  end                           # def prefix=
+
   #
   # Re-open the current sink (unless it's a stream).  This may be
-  # useful if you want to stop and truncate in the middle of logging,
-  # or something.
+  # useful if you want to stop and truncate in the middle of logging
+  # (by changing the {#append=} option), or something.
   #
   # @return [Boolean]
-  #  Returns +true+ if the sink was successfully re-opened, or +false+
+  #  Returns `true` if the sink was successfully re-opened, or `false`
   #  otherwise (such as if it's a stream).
   #
   # @raise [IOError]
@@ -285,27 +304,37 @@ class DumbLogger
   end                           # def reopen
 
   #
-  #
   # @!attribute [rw] sink
   #
   # Sets or returns the sink to which we send our messages.
   #
   # When setting the sink, the value can be an IO instance, a special
-  # symbol, or a string.  If a string, the +:append+ flag from the
-  # instance options is used to determine whether the file will be
-  # rewritten from the beginning, or just have text appended to it.
+  # symbol, or a string.  If a string, the `:append` flag from the
+  # instance options (see {#append=} and {#append?}) is used to
+  # determine whether the file will be rewritten from the beginning,
+  # or just have text appended to it.
   #
-  # Sinking to one of the special symbols (+:$stderr+ or +:$stdout+;
+  # Sinking to one of the special symbols (`:$stderr` or `:$stdout`;
   # see {SPECIAL_SINKS}) results in the sink being re-evaluated at
   # each call to {#message}.  This is useful if these streams might be
   # altered after the logger has been instantiated.
   #
-  # The #sink writer has special requirements, so we define it
-  # explicitly.
+  # @note
+  #  File sink contents may appear unpredictable under the following
+  #  conditions:
+  #  * Messages are being sinked to a file, **and**
+  #  * the file is being accessed by one or more other processes, **and**
+  #  * changes to the file are interleaved between those made by the
+  #    `DumbLogger` {#message} method and activity by the other
+  #    process(es).
   #
   # @return [IO,String,Symbol]
   #  Returns the sink path, special name, or IO object.
   #
+  def sink
+    return @options[:sink]
+  end                          # def sink
+
   def sink=(arg)
     if (@options[:needs_close] \
         && @sink_io.respond_to?(:close) \
@@ -343,27 +372,27 @@ class DumbLogger
     return self.sink
   end                           # def sink=
 
-  def sink
-    return @options[:sink]
-  end                          # def sink
-
   #
   # Constructor.
   #
   # @param [Hash] args
   # @option args [Boolean] :append (true)
-  #  If true, any files opened will have reported text appended to them.
+  #  If true, any **files** opened will have transmitted text appended to
+  #  them.  See {#append=}.
+  # @note
+  #  Streams are **always** treated as being in `:append => true` mode.
   # @option args [String] :prefix ('')
   #  String to insert at the beginning of each line of report text.
+  #  See {#prefix=}.
   # @option args [IO,String] :sink (:$stderr)
-  #  Where reports should be sent.
+  #  Where reports should be sent.  See {#sink=}.
   # @option args [Integer] :loglevel (0)
-  #  Maximum log level for reports.  See {#loglevel}.
+  #  Maximum log level for reports.  See {#loglevel=}.
   # @option args [Integer] :logmask (0)
-  #  Alias for +:loglevel+.
+  #  Alias for `:loglevel`.
   # @option args [Symbol] :level_style (USE_LEVELS)
   #  Whether message loglevels should be treated as integer levels or
-  #  as bitmasks.  See {#level_style}.
+  #  as bitmasks.  See {#level_style=}.
   #
   # @raise [ArgumentError]
   #  Raises an *ArgumentError* exception if the argument isn't a hash.
@@ -412,7 +441,7 @@ class DumbLogger
     #
     # Now go through the remaining options and handle them.  If the
     # option has an associated writer method, call it -- otherwise,
-    # just load it into the +@options+ hash.
+    # just load it into the `@options` hash.
     #
     temp_opts.each do |opt,val|
       wmethod	= (opt.to_s + '=').to_sym
@@ -427,26 +456,39 @@ class DumbLogger
   #
   # @!attribute [rw] append
   #
-  # Controls the behaviour of sink files (*not* IO streams).  If
-  # +true+, report text will be added to the end of any existing
-  # contents; if +false+, files will be truncated and reports will
-  # begin at position +0+.
+  # Controls the behaviour of sink files (but *not* IO streams).  If
+  # `true`, report text will be added to the end of any existing
+  # contents; if `false`, files will be truncated and reports will
+  # begin at position `0`.
+  #
+  # @note
+  #  This setting is only important when a sink is being activated,
+  #  such as `DumbLogger` object instantiation or because of a call to
+  #  {#sink=}, and it controls the position of the first write to the
+  #  sink.  Once a sink is activated (opened), writing continues
+  #  sequentially from that point.
+  #
+  # @note
+  #  Setting this attribute *only* affects **files** opened by
+  #  `DumbLogger`.  Stream sinks are *always* in append-mode.  As long
+  #  as the sink is a stream, this setting will be ignored -- but it
+  #  will become active whenever the sink becomes a file.
   #
   # @return [Boolean]
-  #  Sets or returns the append-on-write control value.
+  #  Sets or returns the file append-on-write control value.
   #
+  def append
+    return (@options[:append] ? true : false)
+  end                           # def append
+
   def append=(arg)
     @options[:append]	= (arg ? true : false)
     return self.append
   end                           # def append=
 
-  def append
-    return (@options[:append] ? true : false)
-  end                           # def append
-
   #
   # @return [Boolean]
-  #  Returns +true+ if new sink files opened by the instance will have
+  #  Returns `true` if new sink files opened by the instance will have
   #  report text appended to them.
   #
   def append?
@@ -454,36 +496,38 @@ class DumbLogger
   end                           # def append?
 
   #
-  # Submit a report for possible transmission.  The argument is an
-  # array of arrays, strings, integers, and/or symbols.  Reports with
-  # a loglevel of zero (the default) are *always* transmitted.
+  # Submit a message for possible transmission to the current sink.
+  # The argument is an array of arrays, strings, integers, and/or
+  # symbols.  Reports with a loglevel of zero (the default) are
+  # *always* transmitted.
   #
   # @param [Array<Array,String,Symbol,Integer,Hash>] args
   #  * The last integer in the array will be treated as the report's
-  #    loglevel; default is +0+.
-  #  * Any +Array+ elements in the arguments will be merged and the
+  #    loglevel; default is `0`.
+  #  * Any `Array` elements in the arguments will be merged and the
   #    values interpreted as level labels (see {#label_levels}).  If
   #    loglevels are bitmasks, the labeled levels are ORed together;
   #    otherwise the lowest labeled level will be used for the message.
-  #  * Any +Hash+ elements in the array will be merged and will
-  #    temporarily override instance-wide options (_e.g._,
-  #    <code>{ :prefix => 'alt' }</code> ).
-  #  * If the DumbLogger::NO_NL value (a +Symbol+) appears in the array,
-  #    the report will not include a terminating newline (useful for
-  #    +"progress:..done"+ reports).
+  #  * Any `Hash` elements in the array will be merged and will
+  #    temporarily override instance-wide options -- *e.g.*,
+  #    `{ :prefix => 'alt' }` .
+  #  * If the `DumbLogger::NO_NL` value (a `Symbol`) appears in the
+  #    array, or a hash element of `:return => false`, the report will
+  #    not include a terminating newline (useful for
+  #    `"progress:..done"` reports).
   #  * Any strings in the array are treated as text to be reported,
   #    one _per_ line.  Each line will begin with the value of
   #    #prefix, and only the final line is subject to the
   #    DumbLogger::NO_NL special-casing.
   #
   # @return [nil,Integer]
-  #  Returns either +nil+ if the message's loglevel is higher than the
+  #  Returns either `nil` if the message's loglevel is higher than the
   #  reporting level, or the level of the report.
   #
-  #  If integer levels are being used, a non-+nil+ return value is
+  #  If integer levels are being used, a non-`nil` return value is
   #  that of the message.  If bitmask levels are being used, the
   #  return value is a mask of the active level bits that applied to
-  #  the message (_i.e._, +msg_bits & logging_mask+).
+  #  the message -- *i.e.*, `msg_bits & logging_mask` .
   #
   def message(*args)
     #
@@ -491,16 +535,13 @@ class DumbLogger
     # list.  This makes the calling format very flexible.
     #
     (symopts, args)	= args.partition { |elt| elt.kind_of?(Symbol) }
-    if (no_nl = symopts.include?(NO_NL))
-      symopts.delete(NO_NL)
-    end
     symlevels		= (symopts & self.labeled_levels.keys).map { |o|
       self.labeled_levels[o]
     }.compact
     (hashopts, args)	= args.partition { |elt| elt.kind_of?(Hash) }
     hashopts		= hashopts.reduce(:merge) || {}
     (level, args)	= args.partition { |elt| elt.kind_of?(Integer) }
-    level		= level.last || 0
+    level		= level.last || hashopts[:level] || hashopts[:mask] || 0
     cur_loglevel	= self.loglevel
     cur_style		= self.level_style
     unless (level.zero?)
@@ -513,12 +554,12 @@ class DumbLogger
     end
     prefix_text		= hashopts[:prefix] || self.prefix
     text		= prefix_text + args.join("\n#{prefix_text}")
-    if ((! hashopts[:newline]) \
-        && (symopts & [ NO_NL, :no_eol, :nonl, :no_nl ]).empty?)
-      text << "\n"
+    unless (hashopts.key?(:newline))
+      hashopts[:newline]= (! symopts.include?(NO_NL))
     end
+    text << "\n" if (hashopts[:newline])
     stream = @options[:volatile] ? eval(self.sink.to_s) : @sink_io
-    stream.print(text)
+    stream.write(text)
     stream.flush if (@options[:volatile])
     return level
   end                           # def message

@@ -26,6 +26,12 @@ class DumbLogger
   @version	= Versionomy.parse('0.0.1')
 
   #
+  # First actual release: 1.0.0!
+  #
+  @version	= @version.change(:major	=> 1,
+                                  :tiny		=> 0)
+
+  #
   # How to advance the version number.
   #
   #@version	= @version.bump(:minor)
@@ -38,7 +44,7 @@ class DumbLogger
   VERSION	= @version.to_s.freeze
 
   #
-  # Returns the Versionomy[http://rubygems.org/gems/versionomy]
+  # Returns the {http://rubygems.org/gems/versionomy Versionomy}
   # representation of the package version number.
   #
   # @return [Versionomy]
