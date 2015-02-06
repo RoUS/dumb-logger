@@ -31,8 +31,8 @@ Gem::Specification.new do |spec|
   spec.email         	= [
                            'kcoar@redhat.com',
                           ]
-  spec.summary       	= %q{Primitive level/mask driven stream logger.}
-#  spec.description   	= %q{TODO: Write a longer description. Optional.}
+  spec.summary       	= %q{Primitive level/mask-driven stream logger.}
+  spec.description   	= %q{Primitive no-frills level/mask-driven stream logger.}
   spec.homepage      	= ''
   spec.license       	= 'Apache 2.0'
 
