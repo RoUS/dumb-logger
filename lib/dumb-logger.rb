@@ -368,6 +368,13 @@ class DumbLogger
       @sink_io = File.open(@options[:sink], (self.append? ? 'a' : 'w'))
       @options[:needs_close] = true
     end
+    #
+    # Note that you cannot seek-position the $stdout or $stderr
+    # streams.  However, there doesn't seem to be a clear way to
+    # determine that, so we'll wrap the actual seek (in {#message}) in
+    # a rescue block.
+    #
+    @options[:needs_seek] = true
     @sink_io.sync = true if (@sink_io.respond_to?(:sync=))
     return self.sink
   end                           # def sink=
@@ -504,21 +511,42 @@ class DumbLogger
   # @param [Array<Array,String,Symbol,Integer,Hash>] args
   #  * The last integer in the array will be treated as the report's
   #    loglevel; default is `0`.
+  #
+  #    **Overridden by `:level` or `:mask` in an options hash passed
+  #    to the method.**
   #  * Any `Array` elements in the arguments will be merged and the
   #    values interpreted as level labels (see {#label_levels}).  If
-  #    loglevels are bitmasks, the labeled levels are ORed together;
-  #    otherwise the lowest labeled level will be used for the message.
+  #    loglevels are bitmasks (see {#level_style}), the labeled levels
+  #    are `OR`ed together; otherwise the lowest labeled level will be
+  #    used for the message.
+  #
+  #    **Overridden by `:level` or `:mask` in an options hash passed
+  #    to the method.**
   #  * Any `Hash` elements in the array will be merged and will
   #    temporarily override instance-wide options -- *e.g.*,
-  #    `{ :prefix => 'alt' }` .
-  #  * If the `DumbLogger::NO_NL` value (a `Symbol`) appears in the
-  #    array, or a hash element of `:return => false`, the report will
-  #    not include a terminating newline (useful for
-  #    `"progress:..done"` reports).
+  #    `{ :prefix  => 'alt' }` .  Valid *per*-call options are:
+  #    * `:prefix  => String`
+  #    * `:level   => Integer`
+  #      (takes precedence over `:mask` if {#level_style} is {USE_LEVELS}.)
+  #    * `:mask    => Integer`
+  #      (takes precedence over `:level` if {#level_style} is {USE_BITMASK}.)
+  #    * `:newline => Boolean`
+  #      (takes precedence over {DumbLogger::NO_NL} in the argument list)
+  #    * `:return  => Boolean`
+  #      (alias for `:newline`; **deprecated after 1.0.0**)
+  #  * If the {DumbLogger::NO_NL} value (a `Symbol`) appears in the
+  #    array, or a hash element of `:newline => false` (or `:return =>
+  #    false`), the report will not include a terminating newline
+  #    (useful for `"progress:..done"` reports).
   #  * Any strings in the array are treated as text to be reported,
-  #    one _per_ line.  Each line will begin with the value of
-  #    #prefix, and only the final line is subject to the
-  #    DumbLogger::NO_NL special-casing.
+  #    one *per* line.  Each line will begin with the value of
+  #    logger's value of {#prefix} (or any overriding value set with
+  #    `:prefix` in a hash of options), and only the final line is
+  #    subject to the {DumbLogger::NO_NL} special-casing.
+  #
+  # @note
+  #  Use of the `:return` hash option is deprecated in versions after
+  #  1.0.0.  Use `:newline` instead.
   #
   # @return [nil,Integer]
   #  Returns either `nil` if the message's loglevel is higher than the
@@ -527,7 +555,7 @@ class DumbLogger
   #  If integer levels are being used, a non-`nil` return value is
   #  that of the message.  If bitmask levels are being used, the
   #  return value is a mask of the active level bits that applied to
-  #  the message -- *i.e.*, `msg_bits & logging_mask` .
+  #  the message -- *i.e.*, `message_mask & logging_mask` .
   #
   def message(*args)
     #
@@ -535,32 +563,110 @@ class DumbLogger
     # list.  This makes the calling format very flexible.
     #
     (symopts, args)	= args.partition { |elt| elt.kind_of?(Symbol) }
+    #
+    # Pull out any symbols that are actually names for levels (or
+    # masks).  The args variable now contains no Symbol elements.
+    #
     symlevels		= (symopts & self.labeled_levels.keys).map { |o|
       self.labeled_levels[o]
     }.compact
+    #
+    # Now any option hashes.
+    #
     (hashopts, args)	= args.partition { |elt| elt.kind_of?(Hash) }
     hashopts		= hashopts.reduce(:merge) || {}
-    (level, args)	= args.partition { |elt| elt.kind_of?(Integer) }
-    level		= level.last || hashopts[:level] || hashopts[:mask] || 0
-    cur_loglevel	= self.loglevel
-    cur_style		= self.level_style
+    #
+    # All hashes have been removed from the args array, and merged
+    # together into a single *per*-message options hash.
+    #
+
+    #
+    # Now some fun stuff.  The appropriate loglevel/mask for this
+    # message can come from
+    #
+    # * Integers in the argument array (last one takes precedence); or
+    # * Values of symbolic level/mask labels (again, last one takes
+    #   precedence, and overrides any explicit integers); or
+    # * Any `:level` or `:mask` value in the options hash (which one
+    #   of those takes precedence depends on the current logging
+    #   style).
+    #
+    (lvls, args)	= args.partition { |elt| elt.kind_of?(Integer) }
+    if (self.log_levels?)
+      level		= hashopts[:level] || hashopts[:mask]
+    else
+      level		= hashopts[:mask] || hashopts[:level]
+    end
+    if (level.nil?)
+      if (self.log_levels?)
+        level		= symlevels.empty? ? lvls.last : symlevels.min
+      else
+        level		= symlevels.empty? ? lvls.last : symlevels.reduce(:|)
+      end
+    end
+    level		||= 0
+    #
+    # We should now have a minimum logging level, or an ORed bitmask,
+    # in variable 'level'.  Time to see if it meets our criteria.
+    #
     unless (level.zero?)
       if (self.log_levels?)
-        return nil if ([ cur_loglevel, *symlevels ].min < level)
+        return nil if (self.loglevel < level)
       elsif (self.log_masks?)
-        level = [ level, *symlevels ].reduce(:|) & cur_loglevel
+        level &=  self.logmask
         return nil if (level.zero?)
       end
     end
+    #
+    # Looks like the request loglevel/mask is within the logger's
+    # requirements, so let's build the output string.
+    #
     prefix_text		= hashopts[:prefix] || self.prefix
     text		= prefix_text + args.join("\n#{prefix_text}")
+    #
+    # The :return option is overridden by :newline, and renamed to it
+    # if :newline isn't already in the options hash.
+    #
+    if (hashopts.key?(:return) && (! hashopts.key?(:newline)))
+      hashopts[:newline] = hashopts[:return]
+      hashopts.delete(:return)
+    end
     unless (hashopts.key?(:newline))
       hashopts[:newline]= (! symopts.include?(NO_NL))
     end
     text << "\n" if (hashopts[:newline])
+    #
+    # Okey.  If the output stream is marked 'volatile', it's one of
+    # our special sinks and we need to evaluate it on every write.
+    #
     stream = @options[:volatile] ? eval(self.sink.to_s) : @sink_io
+    #
+    # If this is our first write to this sink, make sure we position
+    # properly before writing!
+    #
+    if (@options[:needs_seek] && stream.respond_to?(:seek))
+      poz	= (self.append? \
+                   ? IO::SEEK_END \
+                   : IO::SEEK_SET)
+      begin
+        #
+        # Can't seek on some things, so just catch the exception and
+        # ignore it.
+        #
+        stream.seek(0, poz)
+      rescue Errno::ESPIPE => exc
+        #
+        # Do nothing..
+        #
+      end
+      @options[:needs_seek] = false
+    end
     stream.write(text)
     stream.flush if (@options[:volatile])
+    #
+    # All done!  Return the level, or mask bits, that resulted in the
+    # text being transmitted.
+    #
     return level
   end                           # def message
 

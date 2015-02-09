@@ -32,6 +32,15 @@ class DumbLogger
                                   :tiny		=> 0)
 
   #
+  # * Corrected & deprecated `:return` {#message} option key
+  # * Added seek-to on first write to a sink
+  # * Corrected (and documented) applicable level/mask determination
+  #   for {#message}
+  # * Added some tests for `:return` *versus* `:newline`
+  #
+  @version	= @version.bump(:tiny)
+
+  #
   # How to advance the version number.
   #
   #@version	= @version.bump(:minor)

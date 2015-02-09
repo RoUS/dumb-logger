@@ -41,8 +41,20 @@ Feature: Test the output generated
     And stderr should contain exactly "a message"
     And stdout should contain exactly ""
 
-  Scenario: Single-line message with no newline (alternate)
-    When I invoke the logger with ("a message", :newline=>false)
+  Scenario: Single-line message with no newline (alternate 1)
+    When I invoke the logger with ("a message", {:newline=>false})
+    Then the return value should be 0
+    And stderr should contain exactly "a message"
+    And stdout should contain exactly ""
+
+  Scenario: Single-line message with no newline (alternate 2)
+    When I invoke the logger with ("a message", {:return=>false})
+    Then the return value should be 0
+    And stderr should contain exactly "a message"
+    And stdout should contain exactly ""
+
+  Scenario: Single-line message with :newline overriding :return
+    When I invoke the logger with ("a message", {:newline=>false,:return=>true})
     Then the return value should be 0
     And stderr should contain exactly "a message"
     And stdout should contain exactly ""
@@ -53,8 +65,20 @@ Feature: Test the output generated
     And stderr should contain exactly "line 1\nline 2"
     And stdout should contain exactly ""
 
-  Scenario: Multi-line message with no newline (alternate)
+  Scenario: Multi-line message with no newline (alternate 1)
     When I invoke the logger with ("line 1",{:newline=>false},"line 2")
+    Then the return value should be 0
+    And stderr should contain exactly "line 1\nline 2"
+    And stdout should contain exactly ""
+
+  Scenario: Multi-line message with no newline (alternate 2)
+    When I invoke the logger with ("line 1",{:return=>false},"line 2")
+    Then the return value should be 0
+    And stderr should contain exactly "line 1\nline 2"
+    And stdout should contain exactly ""
+
+  Scenario: Multi-line message with :newline overriding :return
+    When I invoke the logger with ("line 1",{:return=>true,:newline=>false},"line 2")
     Then the return value should be 0
     And stderr should contain exactly "line 1\nline 2"
     And stdout should contain exactly ""
