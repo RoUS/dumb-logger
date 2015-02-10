@@ -3,5 +3,6 @@
 --charset utf-8
 --markup markdown
 --files 'LICENCE*'
+--files 'Changelog'
 'lib/**/*.rb'
 'features/**/*.rb'

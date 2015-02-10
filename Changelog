@@ -1,0 +1,6 @@
+%changelog
+
+* Mon Feb  9 2015 Ken Coar <coar@apache.org> - 
+- Add positioning on first write to sink
+- Mark :return as deprecated, and update documentation & tests appropriately.
+- Add tests verifying :newline overrides :return
