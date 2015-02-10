@@ -1,6 +1,13 @@
-%changelog
+```
 
+%changelog
 * Mon Feb  9 2015 Ken Coar <coar@apache.org> - 
-- Add positioning on first write to sink
+- Add positioning on first write to sink.  (Needs tests.)
+- Add ability to reposition on *every* write to the sink.  (Needs tests.)
 - Mark :return as deprecated, and update documentation & tests appropriately.
-- Add tests verifying :newline overrides :return
+- Add tests verifying :newline overrides :return .
+- Override the default #inspect method to conceal internal structures.
+  (Needs tests.)
+- Move internal flags to a separate concealed structure, with a class
+  method to define them.
+```
