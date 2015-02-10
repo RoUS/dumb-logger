@@ -49,6 +49,8 @@ number of strings, symbols, integers, and hashes as arguments.
 Global options that can be set with `#new` include:
 
 * whether files should be opened in append mode;
+* whether the logger (in append mode) should always position at
+  EOF before writing to the sink;
 * whether loglevels are integers or bitmasks; 
 * what the maximum logging level, or active logging bitmask, is;
 * where messages should be sent (the sink); and
@@ -71,8 +73,12 @@ daml.message(4, 'Level 4 message')
 
 Options that can be set on a per-`#message` basis include:
 
+* loglevel or bitmask for the specific message (overrides any integer
+  values passed in the argument list);
 * a prefix string specific to the message (temporarily overriding the
-  default set at instantiation time); and
+  default set at instantiation time);
+* whether the sink should be repositioned to EOF before writing (only
+  in append mode); 
 * whether the (last) line of the message should be terminated with a
   newline or not.  (Useful for multi-stage "`Doing foo: done`" type
   messages.) **Note:** This is done by either including `DumbLogger::NO_NL`
