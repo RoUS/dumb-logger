@@ -16,6 +16,7 @@
 #++
 
 require('dumb-logger/version')
+require('dumb-logger/classmethods')
 
 #
 # This is just a one-off class to allow reporting things to stderr
@@ -29,79 +30,6 @@ require('dumb-logger/version')
 #  doesn't match any named masks.
 #
 class DumbLogger
-
-  #
-  # class DumbLogger eigenclass.
-  #
-  # Since we may have had to open up a file, make sure closing it
-  # again is part of the instance teardown process.
-  #
-  class << self
-    #
-    # If we have a currently open output stream that needs to be
-    # closed (usually because we opened it ourself), close it as part
-    # of the DumbLogger object teardown.
-    #
-    # @param [DumbLogger] obj
-    #  Instance being torn down ('destructed').
-    #
-    def finalize(obj)
-      if (obj.needs_close?)
-        obj.instance_variable_get(:@sink_io).close
-      end
-    end                         # def finalize
-
-    #
-    # Instance method builder (like :attr_accessor) for internal
-    # flags.  These are kept in a separate structure from the
-    # user-modifiable options.
-    #
-    # @param [Array<String,Symbol>] args
-    #  One or more flag identifiers for which `<flag>`, `<flag>=`, and
-    #  `<flag>?` methods should be created.
-    #
-    def private_flag(*args)
-      args = args.map { |o| o.to_s }
-      args.each do |mname|
-        #
-        # `define_method` takes a block, which is a closure, so let's
-        # set variables to values we want valid inside the closures.
-        #
-        control_key   = mname.to_sym
-        reader_method = mname.to_sym
-        writer_method = (mname + '=').to_sym
-        tester_method = (mname + '?').to_sym
-        #
-        # The flag reader method has the same name as the flag itself
-        # (which is a key in the `@controls` hash set up by the
-        # constructor)
-        #
-        define_method(reader_method) do
-          return (@controls[control_key] ? true : false)
-        end
-        #
-        # Now define the set-the-flag method.
-        #
-        define_method(writer_method) do |val|
-          @controls[control_key] = (val ? true : false)
-          return eval("self.send(#{reader_method.inspect})")
-        end
-        #
-        # And finally, the 'is-this-set?' query method, which is
-        # virtually identical to the reader method.
-        #
-        define_method(tester_method) do
-          return eval("self.send(#{reader_method.inspect})")
-        end
-        #
-        # These class methods should only be accessible to descendants
-        # of our class.
-        #
-        protected(reader_method, writer_method, tester_method)
-      end
-    end                         # def private_flag
-
-  end                           # class DumbLogger eigenclass
 
   #
   # Message flag for "do not append a newline".
@@ -176,10 +104,10 @@ class DumbLogger
   #
   # @!attribute [rw] append
   #
-  # Controls the behaviour of sink files (but *not* IO streams).  If
-  # `true`, report text will be added to the end of any existing
-  # contents; if `false`, files will be truncated and reports will
-  # begin at position `0`.
+  # Controls the behaviour of subsequently-opened sink files (but
+  # *not* IO streams).  If `true`, report text will be added to the
+  # end of any existing contents; if `false`, files will be truncated
+  # and reports will begin at position `0`.
   #
   # @note
   #  This setting is only important when a sink is being activated,
@@ -189,31 +117,24 @@ class DumbLogger
   #  sequentially from that point.
   #
   # @note
-  #  Setting this attribute *only* affects **files** opened by
-  #  `DumbLogger`.  Stream sinks are *always* in append-mode.  As long
-  #  as the sink is a stream, this setting will be ignored -- but it
-  #  will become active whenever the sink becomes a file.
+  #  Setting this attribute *only* affects **files** subsequently
+  #  opened by `DumbLogger`.  Stream sinks are *always* in
+  #  append-mode.  As long as the sink is a stream, this setting will
+  #  be ignored -- but it will become meaningful whenever the sink
+  #  becomes a file.
   #
   # @return [Boolean]
   #  Sets or returns the file append-on-write control value.
   #
-  def append
-    return (@options[:append] ? true : false)
-  end                           # def append
+  public_flag(:append)
 
-  def append=(arg)
-    @options[:append]	= (arg ? true : false)
-    return self.append
-  end                           # def append=
-
+  #
+  # @!method append?
   #
   # @return [Boolean]
   #  Returns `true` if new sink files opened by the instance will have
   #  report text appended to them.
   #
-  def append?
-    return self.append
-  end                           # def append?
 
   #
   # Allow the user to assign labels to different log levels or mask
@@ -236,6 +157,30 @@ class DumbLogger
   # @raise [ArgumentError]
   #  Raises an *ArgumentError* exception if the argument isn't a hash
   #  with integer values.
+  #
+  # @example
+  #  #
+  #  # Add labels corresponding to repeated '-v' command-line options:
+  #  #
+  #  daml = DumbLogger.new(:level_style => DumbLogger::USE_LEVELS)
+  #  daml.label_levels(:labels => {
+  #                      :v    => 1,
+  #                      :vv   => 2,
+  #                      :vvv  => 3,
+  #                      :vvvv => 4,
+  #                    })
+  #
+  #  daml.v  ('Message sent for loglevel >= 1 (-v, -vv, -vvv, etc.)')
+  #  daml.vv ('Message sent for loglevel >= 2 (-vv, -vvv, etc.)')
+  #  daml.vvv('Message sent for loglevel >= 3 (-vvv, -vvvv, etc.)')
+  #
+  # @example
+  #  #
+  #  # Copy labels from the already set up stderr logger to a new one
+  #  # sinking to stdout:
+  #  #
+  #  stdout_logger = DumbLogger.new
+  #  stdout_logger.label_levels(stderr_logger.labeled_levels)
   #
   def label_levels(labelhash)
     unless (labelhash.kind_of?(Hash))
@@ -310,7 +255,7 @@ class DumbLogger
   # reported only if submitted with a loglevel which has at least one
   # bit set that is also set in the instance loglevel.
   #
-  # When used as an attribute writer (*e.g.*, `obj.loglevel = val`),
+  # When used as an attribute writer ( *e.g.*, `obj.loglevel = val`),
   # the argument will be treated as an integer.
   #
   # @return [Integer]
@@ -405,7 +350,7 @@ class DumbLogger
   #
   # @note
   #  This can be overridden at runtime *via* the `:prefix` option hash
-  #  element to the {#message} method (*q.v.*).
+  #  element to the {#message} method ( *q.v.*).
   #
   # @return [String]
   #  Sets or returns the prefix string to be used henceforth.
@@ -625,25 +570,12 @@ class DumbLogger
   # @return [Boolean]
   #  Sets or returns the file seek-to-EOF control value.
   #
+  public_flag(:seek_to_eof)
   def seek_to_eof
     result	= (@options[:seek_to_eof] ? true : false)
     self.needs_seek = self.first_write || result
     return result
   end                           # def seek_to_eof
-
-  def seek_to_eof=(arg)
-    @options[:seek_to_eof] = (arg ? true : false)
-    return self.seek_to_eof
-  end                           # def seek_to_eof=
-
-  #
-  # @return [Boolean]
-  #  Returns `true` if the sink is in {#append} mode and should
-  #  *always* be positioned at EOF before writing text.
-  #
-  def seek_to_eof?
-    return self.seek_to_eof
-  end                           # def seek_to_eof?
 
   #
   # Submit a message for possible transmission to the current sink.
