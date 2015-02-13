@@ -32,11 +32,26 @@ class DumbLogger
                                   :tiny		=> 0)
 
   #
+  # Version 1.0.1
+  #
   # * Corrected & deprecated `:return` {#message} option key
   # * Added seek-to on first write to a sink
   # * Corrected (and documented) applicable level/mask determination
   #   for {#message}
   # * Added some tests for `:return` *versus* `:newline`
+  #
+  @version	= @version.bump(:tiny)
+
+  #
+  # Version 1.0.2
+  #
+  # * Added Changelog file.
+  # * Added CONTRIBUTORS file.
+  # * Moved class methods into a separate file.
+  # * Added class methods for defining Boolean flag attributes.
+  # * Added override of {#inspect} to conceal our internal bits.
+  # * Added `:seek_to_eof` option and made positioning more reliable.
+  # * Updated/added various bits of documentation.
   #
   @version	= @version.bump(:tiny)
 
