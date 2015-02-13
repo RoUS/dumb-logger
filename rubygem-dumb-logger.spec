@@ -98,3 +98,17 @@ rm -rf $RPM_BUILD_ROOT%{gem_instdir}/%{name}.spec
 
 
 %changelog
+* Fri Feb 13 2015 Ken Coar 1.0.2
+- Added the Changelog and CONTRIBUTORS files.
+- Added rake task to generate HTML from the markdown files.
+
+* Mon Feb  9 2015 Ken Coar <coar@apache.org> - 
+- Add positioning on first write to sink.  (Needs tests.)
+- Add ability to reposition on *every* write to the sink.  (Needs tests.)
+- Mark :return as deprecated, and update documentation & tests appropriately.
+- Add tests verifying :newline overrides :return .
+- Override the default #inspect method to conceal internal structures.
+  (Needs tests.)
+- Add class methods for declaring Boolean attributes (public or private).
+- Move internal flags to a separate concealed structure, with a class
+  method to define them.
