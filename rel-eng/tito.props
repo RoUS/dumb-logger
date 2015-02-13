@@ -1,6 +1,6 @@
 [buildconfig]
 builder = tito.builder.Builder
-tagger = GemTagger
+tagger = gemtagger.RubyGemTagger
 lib_dir = rel-eng/custom/
 changelog_do_not_remove_cherrypick = 0
 changelog_format = %s (%ae)
