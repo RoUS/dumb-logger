@@ -4,7 +4,7 @@
 %global	rubyabi		1.8
 
 Name:		rubygem-%{gem_name}
-Version:	1.0.2
+Version:	0.0.0
 Release:	1%{?dist}
 BuildArch:	noarch
 
