@@ -32,19 +32,77 @@ Gem::Specification.new do |spec|
                            'kcoar@redhat.com',
                           ]
   spec.summary       	= %q{Primitive level/mask-driven stream logger.}
-  spec.description   	= %q{Primitive no-frills level/mask-driven stream logger.}
-  spec.homepage      	= ''
+  spec.description   	= <<-EOD
+Primitive no-frills level/mask-driven stream logger,
+originally developed to write messages to $stderr as part
+of command-line app debugging.  But now so much more!
+  EOD
+  spec.homepage      	= 'https://github.com/RoUS/dumb-logger'
   spec.license       	= 'Apache 2.0'
 
   spec.files         	= `git ls-files -z`.split("\x0")
   spec.executables   	= spec.files.grep(%r!^bin/!) { |f| File.basename(f) }
   spec.test_files    	= spec.files.grep(%r!^(test|spec|features)/!)
+  spec.extra_rdoc_files = [
+                           'README.md',
+                          ]
+  spec.rdoc_options	= [
+                           '--main',
+                           'README.md',
+                          ]
   spec.require_paths 	= [
                            'lib',
                           ]
 
-  spec.add_development_dependency('bundler', '~> 1.7')
-  spec.add_development_dependency('rake', '~> 10.0')
+  #
+  # Make a hash for our dependencies, since we're using some fancy
+  # code to declare them depending upon the version of the
+  # environment.
+  #
+  requirements_all	= {
+    'versionomy'	=> [
+                            '>= 0.4.3',
+                           ],
+  }
+  requirements_dev	= {
+    'aruba'		=> [],
+    'bundler'		=> [
+                            '~> 1.7',
+                           ],
+    'cucumber'		=> [],
+    'rake'		=> [
+                            '~> 10.0',
+                           ],
+    'rdiscount'		=> [],
+    'yard'		=> [
+                            '>= 0.8.2',
+                           ],
+  }
 
-  spec.add_dependency('versionomy')
+  requirements_all.each do |gem,*vargs|
+    args	= [ gem ]
+    args.push(*vargs) unless (vargs.count.zero? || vargs[0].empty?)
+    spec.add_dependency(*args)
+  end
+
+  #
+  # The following bit of hanky-panky was adapted from uuidtools-2.1.3.
+  #
+  if (spec.respond_to?(:specification_version))
+    spec.specification_version = 3
+
+    if (Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0'))
+      depmethod	= :add_development_dependency
+    else
+      depmethod	= :add_dependency
+    end
+  else
+    depmethod	= :add_dependency
+  end
+  requirements_dev.each do |gem,*vargs|
+    args	= [ gem ]
+    args.push(*vargs) unless (vargs.count.zero? || vargs[0].empty?)
+    spec.send(depmethod, *args)
+  end
+
 end
