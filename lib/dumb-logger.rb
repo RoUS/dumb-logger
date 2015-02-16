@@ -126,6 +126,35 @@ class DumbLogger
   # @return [Boolean]
   #  Sets or returns the file append-on-write control value.
   #
+  # @example
+  #  #
+  #  # Create a logger that will create or open the file `/tmp/foo.log`
+  #  # for messages, and begin writing at the beginning regardless of
+  #  # what content it might already contain.
+  #  #
+  #  File.open('/tmp/foo.log', 'w') { |io| io.puts('Pre-text.') }
+  #  daml = DumbLogger.new(:sink => '/tmp/foo.log', :append => false)
+  #  daml.append?
+  #  => false
+  #  daml.message(0, 'Logged message')
+  #  #
+  #  # /tmp/foo.log should now contain "Logged message.\n"
+  #  #
+  #
+  # @example
+  #  #
+  #  # Create a logger than will append text to an existing (or new)
+  #  # file.
+  #  #
+  #  File.open('/tmp/foo.log', 'w') { |io| io.puts('Pre-text.') }
+  #  daml = DumbLogger.new(:sink => '/tmp/foo.log', :append => true)
+  #  daml.append?
+  #  => true
+  #  daml.message(0, 'Logged message')
+  #  #
+  #  # /tmp/foo.log should now contain "Pre-text.\nLogged message.\n"
+  #  #
+  #
   public_flag(:append)
 
   #
@@ -183,22 +212,41 @@ class DumbLogger
   #  stdout_logger.label_levels(stderr_logger.labeled_levels)
   #
   def label_levels(labelhash)
+    #
+    # Verify our argument first.
+    #
     unless (labelhash.kind_of?(Hash))
       raise ArgumentError.new('level labels must be supplied as a hash')
     end
     unless (labelhash.values.all? { |o| o.kind_of?(Integer) })
       raise ArgumentError.new('labeled levels must be integers')
     end
+    #
+    # Create a hash of the labels-as-Symbols and their integer values.
+    #
     newhash = labelhash.inject({}) { |memo,(label,level)|
       label_sym = label.to_s.downcase.to_sym
       memo[label_sym] = level
       memo
     }
+    #
+    # Add them to our existing list of labels, possibly silently
+    # overriding any colliding names.
+    #
     @options[:labels].merge!(newhash)
+    #
+    # Create singleton methods on this instance corresponding to the
+    # labels.  We force the correct interpretation by using our
+    # label's value in a trailing option hash.
+    #
     newhash.each do |label,level|
       self.define_singleton_method(label) do |*args|
-        (scratch, newargs) = args.partition { |o| o.kind_of?(Integer) }
-        return self.message(level, *newargs)
+        optkey		= (self.log_masks? ? :mask : :level)
+        override	= {
+          optkey	=> level,
+        }
+        args << override
+        return self.message(*args)
       end
     end
     return newhash
