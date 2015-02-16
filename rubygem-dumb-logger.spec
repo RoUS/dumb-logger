@@ -96,6 +96,7 @@ rm -rf $RPM_BUILD_ROOT%{gem_instdir}/%{name}.spec
 %files doc
 %doc		%{gem_docdir}
 %doc		%{gem_instdir}/[A-Z]*.html
+%doc		%{gem_instdir}/.yardoc
 
 
 %changelog

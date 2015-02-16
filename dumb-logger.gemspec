@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 #--
 #   Copyright © 2015 Ken Coar
 #
@@ -22,35 +22,39 @@ Proc.new {
 }.call
 require('dumb-logger/version')
 
-Gem::Specification.new do |spec|
-  spec.name          	= 'dumb-logger'
-  spec.version       	= DumbLogger::VERSION
-  spec.authors       	= [
+Gem::Specification.new do |s|
+  if (s.respond_to?(:required_rubygems_version=))
+    s.required_rubygems_version = Gem::Requirement.new('>= 0')
+  end
+  s.name          	= 'dumb-logger'
+  s.version       	= DumbLogger::VERSION
+  s.authors       	= [
                            'Ken Coar',
                           ]
-  spec.email         	= [
+  s.email         	= [
                            'kcoar@redhat.com',
                           ]
-  spec.summary       	= %q{Primitive level/mask-driven stream logger.}
-  spec.description   	= <<-EOD
+  s.summary       	= ("#{'%s-%s' % [ s.name, s.version, ]} - " +
+                           'Primitive level/mask-driven stream logger.')
+  s.description   	= <<-EOD
 Primitive no-frills level/mask-driven stream logger,
 originally developed to write messages to $stderr as part
 of command-line app debugging.  But now so much more!
   EOD
-  spec.homepage      	= 'https://github.com/RoUS/dumb-logger'
-  spec.license       	= 'Apache 2.0'
+  s.homepage      	= 'https://github.com/RoUS/dumb-logger'
+  s.license       	= 'Apache 2.0'
 
-  spec.files         	= `git ls-files -z`.split("\x0")
-  spec.executables   	= spec.files.grep(%r!^bin/!) { |f| File.basename(f) }
-  spec.test_files    	= spec.files.grep(%r!^(test|spec|features)/!)
-  spec.extra_rdoc_files = [
+  s.files         	= `git ls-files -z`.split("\x0")
+  s.executables   	= s.files.grep(%r!^bin/!) { |f| File.basename(f) }
+  s.test_files    	= s.files.grep(%r!^(test|spec|features)/!)
+  s.extra_rdoc_files = [
                            'README.md',
                           ]
-  spec.rdoc_options	= [
-                           '--main',
-                           'README.md',
+  s.rdoc_options	= [
+                           '--main=README.md',
+                           '--charset=UTF-8',
                           ]
-  spec.require_paths 	= [
+  s.require_paths 	= [
                            'lib',
                           ]
 
@@ -82,14 +86,14 @@ of command-line app debugging.  But now so much more!
   requirements_all.each do |gem,*vargs|
     args	= [ gem ]
     args.push(*vargs) unless (vargs.count.zero? || vargs[0].empty?)
-    spec.add_dependency(*args)
+    s.add_dependency(*args)
   end
 
   #
   # The following bit of hanky-panky was adapted from uuidtools-2.1.3.
   #
-  if (spec.respond_to?(:specification_version))
-    spec.specification_version = 3
+  if (s.respond_to?(:specification_version))
+    s.specification_version = 3
 
     if (Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0'))
       depmethod	= :add_development_dependency
@@ -102,7 +106,7 @@ of command-line app debugging.  But now so much more!
   requirements_dev.each do |gem,*vargs|
     args	= [ gem ]
     args.push(*vargs) unless (vargs.count.zero? || vargs[0].empty?)
-    spec.send(depmethod, *args)
+    s.send(depmethod, *args)
   end
 
 end
