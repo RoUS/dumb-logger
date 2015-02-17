@@ -71,6 +71,8 @@ rm -rf $RPM_BUILD_ROOT%{gem_instdir}/{.require_paths,.travis.yml}
 rm -rf $RPM_BUILD_ROOT%{gem_instdir}/{test*,features*,rel-eng,Gemfile*}
 rm -rf $RPM_BUILD_ROOT%{gem_instdir}/{Rakefile*,tasks*}
 rm -rf $RPM_BUILD_ROOT%{gem_instdir}/%{name}.spec
+rm -rf $RPM_BUILD_ROOT%{gem_instdir}/%{gem_name}.gemspec
+rm -rf $RPM_BUILD_ROOT%{gem_cache}
 
 
 #%check
@@ -93,6 +95,7 @@ fi
 %doc		%{gem_instdir}/Change[Ll]og
 %doc		%{gem_instdir}/CONTRIBUTORS.md
 %doc		%{gem_instdir}/LICEN[SC]E.md
+%doc		%{gem_instdir}/README.md
 %dir		%{gem_instdir}
 %dir		%{gem_libdir}
 %dir		%{gem_libdir}/%{gem_name}
@@ -104,7 +107,6 @@ fi
 %files doc
 %doc		%{gem_docdir}
 %doc		%{gem_instdir}/[A-Z]*.html
-%doc		%{gem_instdir}/.yardoc
 
 
 %changelog
