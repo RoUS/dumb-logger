@@ -1,7 +1,0 @@
-lib/dumblogger.rb 39a7cf6b23ac4e82cfa75ba8ffb55556b75b9ca8
-lib/dumb-logger.rb 5ba788930cf9d0c77d89c4cb1ed76b25bb1cb2f4
-lib/dumb-logger/version.rb a56ec95d626523541073479e27737e3d68d616a5
-lib/dumb-logger/classmethods.rb b2c9d7e2dfb6dec710e31878aae8539dba85f14b
-features/support/env.rb 41f18687d6261ce6df76ff4e028d62682a5bfc6e
-features/support/hooks.rb 7bc6e401e8fe50f861d25efe181aef110c82bc7f
-features/step_definitions/parts.rb 4540ef8a746e0f0cc1f7fc2d9bf28d58f5c439b4

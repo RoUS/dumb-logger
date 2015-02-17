@@ -1,6 +1,6 @@
 %global	gem_name	dumb-logger
 #%global gems_dir	%(ruby -rubygems -e 'begin ; puts(Gem::RUBYGEMS_DIR) ; rescue ; puts(Gem::dir) ; end' 2>/dev/null)
-#%global gem_instdir	%{gemdir}/gems/%{gem_name}-%{version}
+#%global gem_instdir	%{gem_dir}/gems/%{gem_name}-%{version}
 %global	rubyabi		1.8
 
 Name:		rubygem-%{gem_name}
@@ -16,11 +16,8 @@ License:	Apache 2.0 or GPLv2
 URL:		https://github.com/RoUS/dumb-logger
 Source0:	https://rubygems.org/downloads/dumb-logger-1.0.2.gem
 
-BuildRequires:	ruby(abi) = %{rubyabi}
-BuildRequires:	ruby
 BuildRequires:	rubygems-devel
 BuildRequires:	ruby(rubygems) >= 1.3.6
-BuildRequires:	rubygem(versionomy)
 
 
 %description
@@ -41,12 +38,14 @@ Documentation for %{name}
 
 
 %prep
-gem u npack %{SOURCE0}
-%setup -q -D -T -m %{gem_name}-%{version}
+cp /home/coar/mygit/coar/rubygem/%{gem_name}/%{gem_name}-%{version}.gem %{SOURCE0}
+gem unpack %{SOURCE0}
+%setup -q -D -T -n %{gem_name}-%{version}
+gem spec %{SOURCE0} -l --ruby > %{gem_name}.gemspec
 
 
 %build
-gem build %{gem_name}.gemspect
+gem build %{gem_name}.gemspec
 #
 # %%gem_install compiles any C extensions and installs the gem into
 # ./%%gem_dir by default, so that we can move it into the buildroot in
@@ -57,7 +56,7 @@ gem build %{gem_name}.gemspect
 
 %install
 mkdir -p %{buildroot}%{gem_dir}
-cp -a ./%{gem_dir}/* %{buildroot}/%{gem_dir}
+cp -a ./%{gem_dir}/* %{buildroot}%{gem_dir}
 
 #
 # Comment these out until we know how to handle them.
@@ -68,7 +67,7 @@ cp -a ./%{gem_dir}/* %{buildroot}/%{gem_dir}
 #
 # We don't need these files anymore, and they shouldn't be in the RPM.
 #
-rm -rf $RPM_BUILD_ROOT%{gem_instdir}/{.require_paths,.gitignore,.travis.yml}
+rm -rf $RPM_BUILD_ROOT%{gem_instdir}/{.require_paths,.travis.yml}
 rm -rf $RPM_BUILD_ROOT%{gem_instdir}/{test*,features*,rel-eng,Gemfile*}
 rm -rf $RPM_BUILD_ROOT%{gem_instdir}/{Rakefile*,tasks*}
 rm -rf $RPM_BUILD_ROOT%{gem_instdir}/%{name}.spec
@@ -78,6 +77,15 @@ rm -rf $RPM_BUILD_ROOT%{gem_instdir}/%{name}.spec
 #pushd .%{gem_instdir}
 #ruby -S testrb -Ilib:ext/%{gem_name}/ext $(ls -1 tests/test_*.rb | sort)
 #popd
+
+
+%post
+#
+# If Yard is installed on the system, build the yri docco for the gem.
+#
+if which yard 2>&1 > /dev/null ; then
+   yard gems %{gem_name} 2>&1 > /dev/null
+fi
 
 
 %files

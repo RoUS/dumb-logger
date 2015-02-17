@@ -47,9 +47,11 @@ of command-line app debugging.  But now so much more!
   s.files         	= `git ls-files -z`.split("\x0")
   s.executables   	= s.files.grep(%r!^bin/!) { |f| File.basename(f) }
   s.test_files    	= s.files.grep(%r!^(test|spec|features)/!)
-  s.extra_rdoc_files = [
-                           'README.md',
-                          ]
+  s.has_rdoc		= true
+  s.extra_rdoc_files	= [] #`git ls-files -z .yardoc`.split("\x0")
+  s.extra_rdoc_files	|= [
+                            'README.md',
+                           ]
   s.rdoc_options	= [
                            '--main=README.md',
                            '--charset=UTF-8',
