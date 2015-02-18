@@ -85,7 +85,7 @@ end
 
 When(/^I set (?:attribute|the)?\s*["']?([_A-Za-z0-9]+)["']? to (.+?)$/) do |attr,val|
   begin
-    @return_value = @duml.send((attr + '=').to_sym, eval(val))
+    @return_value	= @duml.send((attr + '=').to_sym, eval(val))
   rescue Exception => e
     @exception_raised	= e
     @return_value	= nil

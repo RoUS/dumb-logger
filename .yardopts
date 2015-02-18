@@ -2,7 +2,7 @@
 --no-private
 --charset utf-8
 --markup markdown
---files 'LICENCE*'
+--files 'LICENCE.md'
 --files 'Changelog'
 'lib/**/*.rb'
 'features/**/*.rb'

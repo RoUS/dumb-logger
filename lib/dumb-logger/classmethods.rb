@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# @private
 #--
 #   Copyright © 2015 Ken Coar
 #
@@ -15,8 +16,22 @@
 #   limitations under the License.
 #++
 
+#
+# A simple ( *very* simple) class to provide wrapping for writing
+# status text to files or streams.  Very basic, not intended to be a
+# complete logger at all.  However, it tries to be capable and
+# featureful within its boundaries.
+#
+# The basic concept comes from command-line utilities which adjust the
+# volume of their status reporting based on either degrees of
+# verbosity ( *e.g.*, `-v`, `-vv`, `-vvv`, *et cetera*) or categories
+# by bitmask ( *e.g.*, `-d1`, `-d8`, or `-d9`, in which case the last
+# is a combination of the first two), like the `xdvi` command's
+# `-debug` option.
+#
 class DumbLogger
 
+  # @private
   #
   # class DumbLogger eigenclass.
   #
@@ -24,6 +39,8 @@ class DumbLogger
   # again is part of the instance teardown process.
   #
   class << self
+
+    # @private
     #
     # If we have a currently open output stream that needs to be
     # closed (usually because we opened it ourself), close it as part
@@ -38,6 +55,7 @@ class DumbLogger
       end
     end                         # def finalize
 
+    # @private
     #
     # Instance method builder (like :attr_accessor) for Boolean flags.
     # Defines a reader (`name`), writer (`name=`), and query (`name?`)
@@ -99,6 +117,7 @@ class DumbLogger
     end                         # def flag_field
     protected(:flag_field)
 
+    # @private
     #
     # Declare flag accessors for internal use only.  See {#flag_field}.
     #
@@ -116,6 +135,7 @@ class DumbLogger
     end                         # def private_flag
     protected(:private_flag)
 
+    # @private
     #
     # Declare flag accessors for public instance variables.  See
     # {#flag_field}.

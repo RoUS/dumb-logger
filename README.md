@@ -81,9 +81,10 @@ Options that can be set on a per-`#message` basis include:
   in append mode); 
 * whether the (last) line of the message should be terminated with a
   newline or not.  (Useful for multi-stage "`Doing foo: done`" type
-  messages.) **Note:** This is done by either including `DumbLogger::NO_NL`
-  in the argument list, or `{ :newline => false }` as part of an option
-  hash.
+  messages.)
+  * **Note:** This is done by either including `DumbLogger::NO_NL`
+    in the argument list, or `{ :newline => false }` as part of an option
+    hash.
 
 ## Installation
 

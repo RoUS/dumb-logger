@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# @private
 #--
 #   Copyright © 2015 Ken Coar
 #
@@ -19,15 +20,17 @@ require('dumb-logger/version')
 require('dumb-logger/classmethods')
 
 #
-# This is just a one-off class to allow reporting things to stderr
-# according to the verbosity level.  Very simple, not a complete
-# logger at all.
+# A simple ( *very* simple) class to provide wrapping for writing
+# status text to files or streams.  Very basic, not intended to be a
+# complete logger at all.  However, it tries to be capable and
+# featureful within its boundaries.
 #
-# @todo
-#  Allow assignment of prefices to levels the way we now do labels.
-#  Will probably only work with level-based reporting, since
-#  mask-based reports may get transmitted due to a mask `AND` that
-#  doesn't match any named masks.
+# The basic concept comes from command-line utilities which adjust the
+# volume of their status reporting based on either degrees of
+# verbosity ( *e.g.*, `-v`, `-vv`, `-vvv`, *et cetera*) or categories
+# by bitmask ( *e.g.*, `-d1`, `-d8`, or `-d9`, in which case the last
+# is a combination of the first two), like the `xdvi` command's
+# `-debug` option.
 #
 class DumbLogger
 
@@ -55,6 +58,7 @@ class DumbLogger
                   ]
 
   # @private
+  # @since 1.0.2
   #
   # Flag indicating that the sink is new and hasn't had anything sent
   # to it yet.
@@ -69,11 +73,22 @@ class DumbLogger
   private_flag(:needs_close)
 
   # @private
+  # @since 1.0.2
   #
   # Flag indicating that we need to position the logger stream before
   # the next write.
   #
   private_flag(:needs_seek)
+
+  # @private
+  # @since 1.0.2
+  #
+  # The reader actually isn't idempotent.
+  #
+  def needs_seek(val)
+    self.needs_seek = self.first_write || self.seek_to_eof
+    return @options[:needs_seek]
+  end                           # def needs_seek
 
   # @private
   #
@@ -83,6 +98,7 @@ class DumbLogger
   private_flag(:volatile)
 
   # @private
+  # @since 1.0.2
   #
   # Rewrite the #inspect method so our internals aren't exposed.
   #
@@ -101,8 +117,8 @@ class DumbLogger
     return result
   end                           # def inspect
 
-  #
   # @!attribute [rw] append
+  # @!parse attr_accessor :append
   #
   # Controls the behaviour of subsequently-opened sink files (but
   # *not* IO streams).  If `true`, report text will be added to the
@@ -157,12 +173,16 @@ class DumbLogger
   #
   public_flag(:append)
 
-  #
   # @!method append?
   #
   # @return [Boolean]
   #  Returns `true` if new sink files opened by the instance will have
   #  report text appended to them.
+  #
+  # @example
+  #  @daml = DumbLogger.new(:append => true)
+  #  @daml.append?
+  #  => true
   #
 
   #
@@ -253,9 +273,11 @@ class DumbLogger
   end                           # def label_levels
 
   #
-  # Return a list of all the levels or bitmasks that have been labeled.
-  # The return value is suitable for use as input to the #label_levels
-  # method of this or another instance of this class.
+  # Return a hash of all the levels or bitmasks that have been labeled.
+  #
+  # @note
+  #  The return value is suitable for use as input to the {#label_levels}
+  #  method of this or another instance of this class.
   #
   # @see #label_levels
   #
@@ -267,14 +289,14 @@ class DumbLogger
     return Hash[@options[:labels].sort].freeze
   end                           # def labeled_levels
 
-  #
   # @!attribute [rw] level_style
   #
   # Control whether loglevels are treated as ascending integers, or as
   # bitmasks.
   #
   # @return [Symbol]
-  #  Returns the current setting (either {USE_LEVELS} or {USE_BITMASK}).
+  #  Returns the current setting (either {DumbLogger::USE_LEVELS} or
+  #  {DumbLogger::USE_BITMASK}).
   #
   # @raise [ArgumentError]
   #  Raises an *ArgumentError* exception if the style isn't
@@ -291,7 +313,6 @@ class DumbLogger
     @options[:level_style] = style
   end                           # def level_style=
 
-  #
   # @!attribute [rw] loglevel
   #
   # If loglevels are being treated as integers, this is the maximum
@@ -314,6 +335,8 @@ class DumbLogger
   #  converted to an integer.
   #
   def loglevel=(arg)
+    labels	= self.labeled_levels
+    arg		= labels[arg] if (labels.key?(arg))
     unless (arg.respond_to?(:to_i))
       raise ArgumentError.new('loglevels are integers')
     end
@@ -329,7 +352,8 @@ class DumbLogger
 
   #
   # Returns `true` if loglevel numbers are interpreted as integers
-  # rather than bitmasks.  (See {#level_style} for more information.)
+  # rather than bitmasks; complements {#log_masks?}.  (See
+  # {#level_style} for more information.)
   #
   # @return [Boolean]
   #  Returns `true` if loglevels are regarded as integers rather than
@@ -344,12 +368,8 @@ class DumbLogger
 
   #
   # Returns `true` if loglevel numbers are interpreted as bitmasks
-  # rather than integers.  (See {#level_style} for more information.)
-  #
-  # Determine how loglevel numbers are interpreted.  (See
+  # rather than integers; complements {#log_levels?}.  (See
   # {#level_style} for more information.)
-  #
-  # Returns `true` if they're treated as bitmasks rather than integers.
   #
   # @return [Boolean]
   #  Returns `true` if loglevels are regarded as bitmasks rather than
@@ -368,16 +388,15 @@ class DumbLogger
   #
   CONSTRUCTOR_OPTIONS	= [
                            :append,
+                           :labels,
                            :level_style,
                            :loglevel,
                            :logmask,
-                           :labels,
                            :prefix,
                            :seek_to_eof,
                            :sink,
                           ]
 
-  #
   # @!attribute [r] options
   #
   # Options controlling various aspects of `DumbLogger`'s operation.
@@ -390,7 +409,6 @@ class DumbLogger
     return result
   end                           # def options
 
-  #
   # @!attribute [rw] prefix
   #
   # Prefix string to be inserted at the beginning of each line of
@@ -412,10 +430,31 @@ class DumbLogger
     return self.prefix
   end                           # def prefix=
 
+  # @since 1.0.2
+  #
+  # Do our best to flush any Ruby and operating system/filesystem
+  # buffers out to the current sink.  Useful before re-opening or
+  # re-positioning.
+  #
+  # @return [void]
+  #
+  def flush
+    #
+    # IO#fsync doesn't work on all paths; some special files (like
+    # `/dev/null`) won't accept it.  So, wrap it for safety.  We did
+    # the best we could..
+    #
+    begin
+      @sink_io.fsync if (@sink_io.respond_to?(:fsync))
+    rescue Errno::EINVAL => exc
+    end
+    return nil
+  end                           # def flush
+    
   #
   # Re-open the current sink (unless it's a stream).  This may be
   # useful if you want to stop and truncate in the middle of logging
-  # (by changing the {#append=} option), or something.
+  # (by changing the {#append} option), or something.
   #
   # @return [Boolean]
   #  Returns `true` if the sink was successfully re-opened, or `false`
@@ -428,26 +467,25 @@ class DumbLogger
   def reopen
     return false unless (self.needs_close? && self.sink.kind_of?(String))
     raise IOError.new('sink stream is already closed') if (@sink_io.closed?)
+    self.flush
     @sink_io.reopen(self.sink, (self.append? ? 'a' : 'w'))
-    @sink_io.sync = true if (@sink_io.respond_to?(:sync=))
     return true
   end                           # def reopen
 
-  #
   # @!attribute [rw] sink
   #
   # Sets or returns the sink to which we send our messages.
   #
   # When setting the sink, the value can be an IO instance, a special
   # symbol, or a string.  If a string, the `:append` flag from the
-  # instance options (see {#append=} and {#append?}) is used to
+  # instance options (see {#append} and {#append?}) is used to
   # determine whether the file will be rewritten from the beginning,
   # or just have text appended to it.
   #
   # Sinking to one of the special symbols (`:$stderr` or `:$stdout`;
-  # see {SPECIAL_SINKS}) results in the sink being re-evaluated at
-  # each call to {#message}.  This is useful if these streams might be
-  # altered after the logger has been instantiated.
+  # see {DumbLogger::SPECIAL_SINKS}) results in the sink being
+  # re-evaluated at each call to {#message}.  This is useful if these
+  # streams might be altered after the logger has been instantiated.
   #
   # @note
   #  File sink contents may appear unpredictable under the following
@@ -484,19 +522,19 @@ class DumbLogger
       #
       # If it's one of our special symbols, we don't actually do
       # anything except record the fact -- because they get
-      # interpreted at each #message call.
+      # interpreted at each {#message} call.
       #
-      @options[:sink] = arg
-      @sink_io = nil
-      self.volatile = true
+      @options[:sink]	= arg
+      @sink_io		= nil
+      self.volatile	= true
     else
       #
       # If it's a string, we treat it as a file name, open it, and
       # flag it for closing later.
       #
-      @options[:sink] = arg
-      @sink_io = File.open(@options[:sink], (self.append? ? 'a' : 'w'))
-      self.needs_close = true
+      @options[:sink]	= arg
+      @sink_io		= File.open(self.sink, (self.append? ? 'a' : 'w'))
+      self.needs_close	= true
     end
     #
     # Note that you cannot seek-position the $stdout or $stderr
@@ -505,40 +543,56 @@ class DumbLogger
     # a rescue block.
     #
     self.first_write = true
-    @sink_io.sync = true if (@sink_io.respond_to?(:sync=))
+    self.flush
     return self.sink
   end                           # def sink=
 
   #
   # Constructor.
   #
+  # @note
+  #  The `:loglevel` and `:logmask` options refer to the same thing:
+  #  the definition of what will be logged and what will not.
+  #
+  #  However, if both are present `:logmask` takes precedence over
+  #  `:loglevel` if the argument list also contains `:level_style =>
+  #  USE_BITMASK`.
+  #
+  #  If the level style is `USE_LEVELS` (the default), then
+  #  `:loglevel` takes precedence over `:logmask`.  (See
+  #  {#level_style}.)
+  #
   # @param [Hash] args
   #
   # @option args [Boolean] :append (true)
   #  If true, any **files** opened will have transmitted text appended to
-  #  them.  See {#append=}.
-  # @note
-  #  Streams are **always** treated as being in `:append => true` mode.
+  #  them.  See {#append}.
   #
-  # @option args [String] :prefix ('')
-  #  String to insert at the beginning of each line of report text.
-  #  See {#prefix=}.
+  # @option args [Hash] :labels
+  #  A hash of symbolic names for different log levels/masks.  See
+  #  {#label_levels}.
   #
-  # @option args [Boolean] :seek_to_eof (false)
-  #  Whether to *always* position at EOF before writing in {#append} mode.
-  #
-  # @option args [IO,String] :sink (:$stderr)
-  #  Where reports should be sent.  See {#sink=}.
+  # @option args [Symbol] :level_style (USE_LEVELS)
+  #  Whether message loglevels should be treated as integer levels or
+  #  as bitmasks.  See {#level_style}.
   #
   # @option args [Integer] :loglevel (0)
-  #  Maximum log level for reports.  See {#loglevel=}.
+  #  Maximum log level for reports.  See {#loglevel}.
   #
   # @option args [Integer] :logmask (0)
   #  Alias for `:loglevel`.
   #
-  # @option args [Symbol] :level_style (USE_LEVELS)
-  #  Whether message loglevels should be treated as integer levels or
-  #  as bitmasks.  See {#level_style=}.
+  # @option args [String] :prefix ('')
+  #  String to insert at the beginning of each line of report text.
+  #  See {#prefix} and {#message}.
+  #
+  # @option args [Boolean] :seek_to_eof (false)
+  #  Whether to *always* position at EOF before writing in {#append} mode.
+  #  See {#seek_to_eof}.
+  #
+  # @option args [IO,String,Symbol] :sink (:$stderr)
+  #  Where reports should be sent.  See {#sink} and
+  #  {DumbLogger::SPECIAL_SINKS}.
   #
   # @raise [ArgumentError]
   #  Raises an *ArgumentError* exception if the argument isn't a hash.
@@ -600,14 +654,16 @@ class DumbLogger
     end
   end                           # def initialize
 
-  #
   # @!attribute [rw] seek_to_eof
+  # @!parse attr_accessor :seek_to_eof
+  # @since 1.0.2
   #
   # Controls whether the sink is *always* positioned to the EOF before
   # writing message text.
   #
   # @note
-  #  Only meaningful in {#append} mode; ignored otherwise.
+  #  Only meaningful in {#append} mode with a file synk; ignored
+  #  otherwise.
   #
   # @note
   #  Setting this attribute *only* affects **files** opened by
@@ -616,14 +672,26 @@ class DumbLogger
   #  will become active whenever the sink is set to a file.
   #
   # @return [Boolean]
-  #  Sets or returns the file seek-to-EOF control value.
+  #  Returns the file seek-to-EOF control value.
+  #
+  # @example
+  #  @daml = DumbLogger.new(:append => true)
+  #  @daml.seek_to_eof = true
+  #  @daml.sink = '/tmp/foo.log'
+  #  @daml.message('First post!')
+  #  #
+  #  # If /tmp/foo.log already existed, "First post!\n" would be written at
+  #  # the end of the content already present.
+  #  #
   #
   public_flag(:seek_to_eof)
-  def seek_to_eof
-    result	= (@options[:seek_to_eof] ? true : false)
-    self.needs_seek = self.first_write || result
-    return result
-  end                           # def seek_to_eof
+
+  # @!method seek_to_eof?
+  #
+  # @return [Boolean]
+  #  Returns `true` if sink files should always be positioned to the
+  #  end before writing messages to them.  (See {#seek_to_eof}.)
+  #
 
   #
   # Submit a message for possible transmission to the current sink.
@@ -631,20 +699,33 @@ class DumbLogger
   # symbols.  Reports with a loglevel of zero (the default) are
   # *always* transmitted.
   #
+  # @note
+  #  The intended loglevel for the message is determined according to
+  #  the following rules:
+  #
+  #  1. If the method is invoked using a label (see {#label_levels}), the
+  #     level/mask used will **always** be that associated with the label.
+  #  1. If the argument list contains an option for `:level` *and* the
+  #     level style (see {#level_style}) is {DumbLogger::USE_LEVELS},
+  #     the option's value will be used.  Contrariwise, if the current
+  #     style is {DumbLogger::USE_BITMASK} and there's a `:mask`
+  #     option, its value will be used.
+  #  1. If the argument list includes an array of label symbols, the
+  #     corresponding values will be used (`OR`ed together for
+  #     `USE_BITMASK`, or the lowest value for `USE_LEVELS`).
+  #  1. If there are any integers in the argument list, the last one
+  #     encountered will be used.
+  #
   # @param [Array<Array,String,Symbol,Integer,Hash>] args
   #  * The last integer in the array will be treated as the report's
-  #    loglevel; default is `0`.
+  #    loglevel; default is `0`.  **See note.**
   #
-  #    **Overridden by `:level` or `:mask` in an options hash passed
-  #    to the method.**
   #  * Any `Array` elements in the arguments will be merged and the
-  #    values interpreted as level labels (see {#label_levels}).  If
+  #    values interpreted as labels (see {#label_levels}).  If
   #    loglevels are bitmasks (see {#level_style}), the labeled levels
   #    are `OR`ed together; otherwise the lowest labeled level will be
-  #    used for the message.
+  #    used for the message.  **See note.**
   #
-  #    **Overridden by `:level` or `:mask` in an options hash passed
-  #    to the method.**
   #  * Any `Hash` elements in the array will be merged and will
   #    temporarily override instance-wide options -- *e.g.*,
   #    `{ :prefix  => 'alt' }` .  Valid *per*-call options are:
@@ -652,9 +733,11 @@ class DumbLogger
   #    * `:seek_to_eof => Boolean`
   #      (temporarily overrides {#seek_to_eof} logger setting.)
   #    * `:level   => Integer`
-  #      (takes precedence over `:mask` if {#level_style} is {USE_LEVELS}.)
+  #      (takes precedence over `:mask` if {#level_style} is
+  #      {DumbLogger::USE_LEVELS}.  **See note.**)
   #    * `:mask    => Integer`
-  #      (takes precedence over `:level` if {#level_style} is {USE_BITMASK}.)
+  #      (takes precedence over `:level` if {#level_style} is
+  #      {DumbLogger::USE_BITMASK}.  **See note.**)
   #    * `:newline => Boolean`
   #      (takes precedence over {DumbLogger::NO_NL} in the argument list)
   #    * `:return  => Boolean`
@@ -681,6 +764,12 @@ class DumbLogger
   #  that of the message.  If bitmask levels are being used, the
   #  return value is a mask of the active level bits that applied to
   #  the message -- *i.e.*, `message_mask & logging_mask` .
+  #
+  # @example
+  #  @daml = DumbLogger.new
+  #  @daml.loglevel = 3
+  #  @daml.message('First post!')        # level 0 always gets written
+  #  @daml.message(5, 'Silent partner!') # too high, not written
   #
   def message(*args)
     #
@@ -767,8 +856,10 @@ class DumbLogger
     stream = self.volatile ? eval(self.sink.to_s) : @sink_io
     #
     # If this is our first write to this sink, or we're in {#append}
-    # mode and always supposed to seek to the EOF,, make sure we
-    # position properly before writing!
+    # mode and always supposed to seek to the EOF, make sure we
+    # position properly before writing!  Use {#reopen} in order to get
+    # the advantage (hopefully) of the filesystem's updates from other
+    # writers.
     #
     if ((self.first_write? || self.seek_to_eof?) \
         && stream.respond_to?(:seek))
@@ -780,6 +871,7 @@ class DumbLogger
         # Can't seek on some things, so just catch the exception and
         # ignore it.
         #
+        self.reopen
         stream.seek(0, poz)
       rescue Errno::ESPIPE => exc
         #

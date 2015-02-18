@@ -45,6 +45,10 @@ of command-line app debugging.  But now so much more!
   s.license       	= 'Apache 2.0'
 
   s.files         	= `git ls-files -z`.split("\x0")
+  #
+  # These cause problems when building RPMs, and we don't need 'em in
+  # the gem anyway.
+  #
   s.files.delete('.yardopts')
   s.files.delete('.gitignore')
   s.executables   	= s.files.grep(%r!^bin/!) { |f| File.basename(f) }
@@ -112,4 +116,4 @@ of command-line app debugging.  But now so much more!
     s.send(depmethod, *args)
   end
 
-end
+end                             # Gem::Specification.new

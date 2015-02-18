@@ -38,7 +38,6 @@ Documentation for %{name}
 
 
 %prep
-cp /home/coar/mygit/coar/rubygem/%{gem_name}/%{gem_name}-%{version}.gem %{SOURCE0}
 gem unpack %{SOURCE0}
 %setup -q -D -T -n %{gem_name}-%{version}
 gem spec %{SOURCE0} -l --ruby > %{gem_name}.gemspec

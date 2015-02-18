@@ -87,9 +87,14 @@ default set at instantiation time);</li>
 in append mode);</li>
 <li>whether the (last) line of the message should be terminated with a
 newline or not.  (Useful for multi-stage "<code>Doing foo: done</code>" type
-messages.) <strong>Note:</strong> This is done by either including <code>DumbLogger::NO_NL</code>
+messages.)
+
+<ul>
+<li><strong>Note:</strong> This is done by either including <code>DumbLogger::NO_NL</code>
 in the argument list, or <code>{ :newline =&gt; false }</code> as part of an option
 hash.</li>
+</ul>
+</li>
 </ul>
 
 

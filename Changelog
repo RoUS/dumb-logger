@@ -1,13 +1,23 @@
 ```
 
 %changelog
+* Wed Feb 18 2015 Ken Coar <coar@apache.org> - 
+- Added more @examples to method doc-blocks, and updated docco in general.
+- Updated gemspec file and RPM spec file for Fedora packaging.
+- Removed @todo entry that has been added to the github issues list.
+- Changed IO#sync= calls to IO#fsync to really flush buffers to disk.
+
+* Tue Feb 17 2015 Ken Coar <coar@apache.org> - 
+- Updated #loglevel= to accept already-defined symbolic levels.
+
 * Fri Feb 13 2015 Ken Coar <coar@apache.org> - 
 - Added the Changelog and CONTRIBUTORS files.
 - Added rake task to generate HTML from the markdown files.
 
 * Mon Feb  9 2015 Ken Coar <coar@apache.org> - 
 - Add positioning on first write to sink.  (Needs tests.)
-- Add ability to reposition on *every* write to the sink.  (Needs tests.)
+- Add ability to reposition on *every* write to the sink, and remove @todo.
+  (Needs tests.)
 - Mark :return as deprecated, and update documentation & tests appropriately.
 - Add tests verifying :newline overrides :return .
 - Override the default #inspect method to conceal internal structures.
