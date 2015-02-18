@@ -781,7 +781,8 @@ class DumbLogger
     # Pull out any symbols that are actually names for levels (or
     # masks).  The args variable now contains no Symbol elements.
     #
-    symlevels		= (symopts & self.labeled_levels.keys).map { |o|
+    (aryopts, args)	= args.partition { |elt| elt.kind_of?(Array) }
+    symlevels		= (aryopts.flatten & self.labeled_levels.keys).map { |o|
       self.labeled_levels[o]
     }.compact
     #

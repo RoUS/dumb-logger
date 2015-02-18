@@ -1,3 +1,4 @@
+@labels
 Feature: Test reporting using labeled levels
   In order to report using different methods,
   A developer
@@ -36,4 +37,27 @@ Feature: Test reporting using labeled levels
     And I label level 6 with name "silent"
     And I query method "labeled_levels"
     Then the return value should be {:debug=>1, :ok=>0, :silent=>6}
+
+  Scenario: Check that an array of labels uses the minimum value
+    When I label level 1 with name "one"
+    And I label level 2 with name "two"
+    And I label level 3 with name "three"
+    And I invoke the logger with message([:three,:one], 'a message')
+    Then the return value should be 1
+    And stderr should contain exactly "a message\n"
+    And I invoke the logger with message([:three,:two], 'a message')
+    Then the return value should be 2
+    And stderr should contain exactly "a message\n"
+    And I invoke the logger with message([:three,:two], 'a message', 99)
+    Then the return value should be 2
+    And stderr should contain exactly "a message\n"
+
+  Scenario: Check that an array of labels supercedes an integer valu
+    When I label level 1 with name "one"
+    And I label level 2 with name "two"
+    And I label level 3 with name "three"
+    And I set 'loglevel' to 1
+    And I invoke the logger with message([:three,:two], 'a message', 0)
+    Then the return value should be nil
+    And stderr should contain exactly ""
 
