@@ -4,16 +4,6 @@ Feature: Test default attributes and setting/pinging them
   A developer
   Should be able to manipulate all of the logger's attributes
 
-#  Things to test:
-#   o constructor
-#     - no args
-#     - :append => {true,false,bogus}
-#     - :level_style => {USE_LEVELS,USE_BITMASK,bogus}
-#     - :loglevel => {number,bogus}
-#     - :logmask => {number,bogus}
-#     - :prefix => {string,bogus}
-#     - :sink => {path,IO,bogus}
-
   Background:
     Given I have a DumbLogger object
 

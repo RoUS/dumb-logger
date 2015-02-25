@@ -40,43 +40,51 @@ And(/^I invoke the logger with (\S*)\((.*)\)$/) do |label,args|
 end
 
 Then(/^stdout should contain exactly (.+)$/) do |xval|
-  expect(@stdout_text).to eq eval(xval)
+  expect(@stdout_text).to eq(eval(xval))
 end
 
 Then(/^stdout should contain exactly:$/) do |xval|
-  expect(@stdout_text).to eq xval
+  expect(@stdout_text).to eq(xval)
 end
 
 Then(/^stderr should contain exactly (.+)$/) do |xval|
-  expect(@stderr_text).to eq eval(xval)
+  expect(@stderr_text).to eq(eval(xval))
 end
 
 Then(/^stderr should contain exactly:$/) do |xval|
-  expect(@stderr_text).to eq xval
+  expect(@stderr_text).to eq(xval)
 end
 
 Then(/^the return value should be (.*)$/) do |xval|
-  expect(@return_value).to eq eval(xval)
+  expect(@return_value).to eq(eval(xval))
+end
+
+Then(/^the return value should include ['"]?(.*)['"]?$/) do |xval|
+  expect(@return_value).to match(%r!#{xval}!)
+end
+
+Then(/^the return value should not include ['"]?(.*)['"]?$/) do |xval|
+  expect(@return_value).not_to match(%r!#{xval}!)
 end
 
 Then(/^the (?:log-level|logging-mask) should\s+(?:still)?\s*be ((?:0d)?\d+|0x[[:xdigit:]]+|0b[01]+)$/) do |xval|
-  expect(@duml.loglevel).to eq xval.to_i
+  expect(@duml.loglevel).to eq(xval.to_i)
 end
 
 Then(/^the sink should be (.+)$/) do |xval|
-  expect(@duml.sink).to eq eval(xval)
+  expect(@duml.sink).to eq(eval(xval))
 end
 
 Then(/^the style should be (.+)$/) do |xval|
-  expect(@duml.level_style).to eq eval(xval)
+  expect(@duml.level_style).to eq(eval(xval))
 end
 
 Then(/^the prefix should be (.+)$/) do |xval|
-  expect(@duml.prefix).to eq eval(xval)
+  expect(@duml.prefix).to eq(eval(xval))
 end
 
 Then(/^append-mode should be (.+)$/) do |xval|
-  expect(@duml.append?).to eq eval(xval)
+  expect(@duml.append?).to eq(eval(xval))
 end
 
 When(/^I query (?:attribute|method) ["']?([_A-Za-z0-9?]+)["']?$/) do |attr|
@@ -93,5 +101,5 @@ When(/^I set (?:attribute|the)?\s*["']?([_A-Za-z0-9]+)["']? to (.+?)$/) do |attr
 end
 
 Then(/^it should raise an exception of type (\S+)$/) do |xval|
-  expect(@exception_raised.class).to eq eval(xval)
+  expect(@exception_raised.class).to eq(eval(xval))
 end

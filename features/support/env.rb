@@ -2,6 +2,20 @@ Proc.new {
   libdir = File.expand_path(File.join(__FILE__, '..', '..', '..', 'lib'))
   $:.replace($: | [ libdir ])
 }.call
+
+#
+# Must load and start simplecov before any application code
+#
+require('simplecov')
+SimpleCov.start do
+  add_filter('/features/')
+  add_filter('/libexec')
+  add_filter('/lib/hll_active_record/')
+  add_filter('/test/')
+  add_filter('/tmp/')
+end
+SimpleCov.command_name(ARGV.join(' '))
+
 require('dumb-logger')
 require('aruba/cucumber')
 require('debugger')

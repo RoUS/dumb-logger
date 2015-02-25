@@ -1,0 +1,7 @@
+#options
+exceptions
+#reopen
+#sink= when @sink_io.closed?
+:logmask > :loglevel when USE_BITMASK
+:logmask < :loglevel when USE_LEVELS
+

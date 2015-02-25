@@ -1,5 +1,6 @@
 @output
-Feature: Test the output generated
+@file
+Feature: Test the output generated and sent to a file
   In order to use the basic functionality of the DumbLogger class
   A developer
   Should be able to depend on the correct output

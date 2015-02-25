@@ -29,6 +29,8 @@ group(:test, :development) do
   gem('aruba')
   gem('cucumber')
   gem('rake')
+  gem('simplecov',
+      :require		=> false)
   gem('rdiscount')
   gem('redcarpet',	'< 3.0.0')
   gem('test-unit',
