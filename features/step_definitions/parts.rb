@@ -22,7 +22,7 @@ And(/^the loglevel is set to (\S+)$/) do |level|
   @return_value = @duml.loglevel		= level.to_i
 end
 
-And(/^I label (?:level|mask|bitmask) (\d+) with name "(.+)"$/) do |level,label|
+And(/^I label (?:level|mask|bitmask) ((?:0d)?\d+|0x[[:xdigit:]]+|0b[01]+) with name "(.+)"$/) do |level,label|
   @return_value = @duml.label_levels(eval("{#{label.to_sym.inspect}=>#{level}}"))
 end
 
@@ -59,7 +59,7 @@ Then(/^the return value should be (.*)$/) do |xval|
   expect(@return_value).to eq eval(xval)
 end
 
-Then(/^the (?:log-level|logging-mask) should\s+(?:still)?\s*be (\d+)$/) do |xval|
+Then(/^the (?:log-level|logging-mask) should\s+(?:still)?\s*be ((?:0d)?\d+|0x[[:xdigit:]]+|0b[01]+)$/) do |xval|
   expect(@duml.loglevel).to eq xval.to_i
 end
 

@@ -1,3 +1,4 @@
+@output
 Feature: Test the output generated
   In order to use the basic functionality of the DumbLogger class
   A developer

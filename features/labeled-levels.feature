@@ -1,4 +1,5 @@
 @labels
+@levels
 Feature: Test reporting using labeled levels
   In order to report using different methods,
   A developer
@@ -52,7 +53,7 @@ Feature: Test reporting using labeled levels
     Then the return value should be 2
     And stderr should contain exactly "a message\n"
 
-  Scenario: Check that an array of labels supercedes an integer valu
+  Scenario: Check that an array of labels supercedes an integer value
     When I label level 1 with name "one"
     And I label level 2 with name "two"
     And I label level 3 with name "three"

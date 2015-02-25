@@ -1,3 +1,4 @@
+@attributes
 Feature: Test default attributes and setting/pinging them
   In order to use the basic functionality of the DumbLogger class
   A developer

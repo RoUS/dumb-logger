@@ -1,3 +1,4 @@
+@levels
 Feature: Test reporting using numeric levels
   In order to use the basic functionality of the DumbLogger class
   A developer
