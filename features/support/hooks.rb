@@ -1,3 +1,6 @@
 Before() do
   @exception_raised	= nil
-end
+  @dirs			= [
+                           'tmp/aruba',
+                          ]
+end                             # Before

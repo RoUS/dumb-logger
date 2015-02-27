@@ -104,7 +104,7 @@ class DumbLogger
         #
         define_method(writer_method) do |val|
           instance_variable_get(hashivar)[hash_key] = (val ? true : false)
-          return eval("self.send(#{reader_method.inspect})")
+          return instance_variable_get(hashivar)[hash_key]
         end
         #
         # And finally, the 'is-this-set?' query method, which is

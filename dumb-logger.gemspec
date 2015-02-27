@@ -81,6 +81,9 @@ of command-line app debugging.  But now so much more!
                             '~> 1.7',
                            ],
     'cucumber'		=> [],
+    'json'		=> [
+                            '>= 1.8.1',
+                           ],
     'rake'		=> [
                             '~> 10.0',
                            ],

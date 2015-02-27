@@ -85,10 +85,18 @@ class DumbLogger
   #
   # The reader actually isn't idempotent.
   #
-  def needs_seek(val)
-    self.needs_seek = self.first_write || self.seek_to_eof
+  def needs_seek
+    self.needs_seek	= (self.first_write || self.seek_to_eof)
     return @options[:needs_seek]
   end                           # def needs_seek
+
+  # @private
+  # @since 1.0.2
+  #
+  # Flag indicating that the sink is one of our special symbols (see
+  # {DumbLogger::SPECIAL_SINKS}).
+  #
+  private_flag(:special_sink)
 
   # @private
   #
@@ -451,6 +459,79 @@ class DumbLogger
     return nil
   end                           # def flush
     
+  # @since 1.0.2
+  #
+  # Close the current sink (if we opened it initially).
+  #
+  # @return [Boolean]
+  #  Returns `true` if the sink has been, or already was, closed.
+  #  Returns `false` if the sink is one of the specials (see
+  #  {DumbLogger::SPECIAL_SINKS}).
+  #
+  # @raise [IOError]
+  #  Raises an *IOError* exception if the sink stream is already
+  #  closed.
+  #
+  def close
+    #
+    # If it's one of our special streams ( *e.g.*, `:$stderr`), we
+    # don't close it.
+    #
+    return false if (self.special_sink?)
+    #
+    # If we didn't open it, we shouldn't close it.  An attempt to do
+    # so means the developer needs to take another look at the flow.
+    #
+    unless (self.needs_close?)
+      raise IOError.new('unable to close a sink passed in as a stream')
+    end
+    #
+    # If the stream is already closed, do nothing.  Close it if it
+    # isn't -- but either way, clear the `needs_close` flag.
+    #
+    self.needs_close	= false
+    if (@sink_io.respond_to?(:closed?))
+      @sink_io.close unless (@sink_io.closed?)
+      return true
+    end
+    return nil
+  end                           # def close
+
+  # @since 1.0.2
+  #
+  # Do our best to flush any Ruby and operating system/filesystem
+  # buffers out to the current sink.  Useful before re-opening or
+  # re-positioning.
+  #
+  # @return [void]
+  #
+  def flush
+    #
+    # IO#fsync doesn't work on all paths; some special files (like
+    # `/dev/null`) won't accept it.  So, wrap it for safety.  We did
+    # the best we could..
+    #
+    begin
+      @sink_io.fsync if (@sink_io.respond_to?(:fsync))
+    rescue Errno::EINVAL => exc
+    end
+    return nil
+  end                           # def flush
+    
+  # @private
+  # @since 1.0.2
+  #
+  # Check to see if the value is one of our special sink types.
+  #
+  # @param [Symbol] arg
+  #
+  # @return [Boolean]
+  #
+  def is_special?(arg)
+    result	= SPECIAL_SINKS.include?(arg) ? true : false
+    return result
+  end                           # def is_special?
+
   #
   # Re-open the current sink (unless it's a stream).  This may be
   # useful if you want to stop and truncate in the middle of logging
@@ -465,8 +546,10 @@ class DumbLogger
   #  closed.
   #
   def reopen
+    if (@sink_io.respond_to?(:closed?) && @sink_io.closed?)
+      raise IOError.new('sink stream is already closed') 
+    end
     return false unless (self.needs_close? && self.sink.kind_of?(String))
-    raise IOError.new('sink stream is already closed') if (@sink_io.closed?)
     self.flush
     @sink_io.reopen(self.sink, (self.append? ? 'a' : 'w'))
     return true
@@ -507,18 +590,19 @@ class DumbLogger
     if (self.needs_close? \
         && @sink_io.respond_to?(:close) \
         && (! [ self.sink, @sink_io ].include?(arg)))
-      @sink_io.close unless (@sink_io.closed?)
+      self.close unless (@sink_io.closed?)
       @sink_io = nil
     end
 
-    self.volatile = false
+    self.volatile	= false
+    self.special_sink	= false
     if (arg.kind_of?(IO))
       #
       # If it's an IO, then we assume it's already open.
       #
-      @options[:sink] = @sink_io = arg
-      self.needs_close = false
-    elsif (SPECIAL_SINKS.include?(arg))
+      @options[:sink]	= @sink_io = arg
+      self.needs_close	= false
+    elsif (self.is_special?(arg))
       #
       # If it's one of our special symbols, we don't actually do
       # anything except record the fact -- because they get
@@ -527,6 +611,7 @@ class DumbLogger
       @options[:sink]	= arg
       @sink_io		= nil
       self.volatile	= true
+      self.special_sink	= true
     else
       #
       # If it's a string, we treat it as a file name, open it, and
@@ -542,7 +627,7 @@ class DumbLogger
     # determine that, so we'll wrap the actual seek (in {#message}) in
     # a rescue block.
     #
-    self.first_write = true
+    self.first_write	= true
     self.flush
     return self.sink
   end                           # def sink=
@@ -627,16 +712,21 @@ class DumbLogger
     #
     temp_opts.delete_if { |k,v| (! CONSTRUCTOR_OPTIONS.include?(k)) }
     #
+    # We need to make sure the `append` mode is correctly set before
+    # we get to the `sink` setting, since the latter will potentially
+    # open the output according to the former.
+    #
+    self.append		= temp_opts.delete(:append)
+    #
     # Do loglevel stuff.  We're going to run this through the writer
     # method, since it has argument validation code.
     #
     # If the user wants to use bitmasks, then the :logmask argument
     # key takes precedence over the :loglevel one.
     #
-    self.level_style = temp_opts[:level_style]
-    temp_opts.delete(:level_style)
-    if (self.log_masks?)
-      temp_opts[:loglevel] = temp_opts[:logmask] if (temp_opts.key?(:logmask))
+    self.level_style	= temp_opts.delete(:level_style)
+    if (self.log_masks? && temp_opts.key?(:logmask))
+      temp_opts[:loglevel] = temp_opts[:logmask] 
     end
     temp_opts.delete(:logmask)
     #
@@ -645,11 +735,11 @@ class DumbLogger
     # just load it into the `@options` hash.
     #
     temp_opts.each do |opt,val|
-      wmethod	= (opt.to_s + '=').to_sym
+      wmethod		= (opt.to_s + '=').to_sym
       if (self.respond_to?(wmethod))
         self.send(wmethod, val)
       else
-        @options[opt] = val
+        @options[opt]	= val
       end
     end
   end                           # def initialize
@@ -862,11 +952,10 @@ class DumbLogger
     # the advantage (hopefully) of the filesystem's updates from other
     # writers.
     #
-    if ((self.first_write? || self.seek_to_eof?) \
-        && stream.respond_to?(:seek))
-      poz	= (self.append? \
-                   ? IO::SEEK_END \
-                   : IO::SEEK_SET)
+    if (self.needs_seek? && stream.respond_to?(:seek))
+      poz		= (self.append? \
+                           ? IO::SEEK_END \
+                           : IO::SEEK_SET)
       begin
         #
         # Can't seek on some things, so just catch the exception and
@@ -881,8 +970,8 @@ class DumbLogger
       end
     end
     stream.write(text)
-    stream.flush if (self.volatile?)
-    self.first_write = false
+    self.flush
+    self.first_write	= false
     #
     # All done!  Return the level, or mask bits, that resulted in the
     # text being transmitted.

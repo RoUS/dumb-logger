@@ -1,4 +1,4 @@
-@masks
+@bitmasks
 Feature: Test reporting using bitmasks
   In order to use the basic functionality of the DumbLogger class
   A developer
@@ -9,6 +9,18 @@ Feature: Test reporting using bitmasks
     And I set attribute 'sink' to :$stderr
     And I set attribute level_style to DumbLogger::USE_BITMASK
     And I set attribute loglevel to 0b01101
+
+  Scenario: Confirm that :logmask dominates :loglevel
+    When I create a DumbLogger object using:
+      """
+      {
+        :level_style	=> DumbLogger::USE_BITMASK,
+        :loglevel	=> 10,
+        :logmask	=> 20,
+      }
+      """
+    Then the loglevel should be 20
+    Then the logmask should be 20
 
   Scenario: Default Level-0 1-liner text always gets sent and returns 0)
     When I invoke the logger with ("a message")

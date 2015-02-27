@@ -1,7 +1,7 @@
 source('https://rubygems.org/')
 
 #
-# All the dependencies *were* in jene.gemspec, but Bundler is
+# All the dependencies *were* in dumb-logger.gemspec, but Bundler is
 # remarkably stupid about gems needed *by* the gemspec.
 #
 #gemspec
@@ -28,6 +28,7 @@ end
 group(:test, :development) do
   gem('aruba')
   gem('cucumber')
+  gem('json',		'>= 1.8.0')
   gem('rake')
   gem('simplecov',
       :require		=> false)

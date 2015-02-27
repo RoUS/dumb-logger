@@ -6,6 +6,7 @@ Proc.new {
 #
 # Must load and start simplecov before any application code
 #
+require('json')
 require('simplecov')
 SimpleCov.start do
   add_filter('/features/')
@@ -34,7 +35,7 @@ module DumbLogger_TestSupport
   # Provide helpers to wrap IO streams by temporarily redirecting them
   # to a StringIO object.
   #
- 
+
   # @private
   #
   # Capture IO to one or more streams during block execution.
@@ -115,6 +116,33 @@ module DumbLogger_TestSupport
   def capture_stderr(&block)
     return capture_stream(:$stderr, &block)
   end                           # def capture_stderr
+
+  #
+  # Wrap the specified block in a rescue block so we can capture any
+  # exceptions.
+  #
+  # @yield
+  #
+  # @return [nil,Object]
+  #   Returns the exit value of the block (whatever it may be), or
+  #   `nil` if an exception was caught.
+  #
+  def wrap_exception(&block)
+    @exception_raised	= nil
+    @return_value		= nil
+    begin
+      #
+      # Do this in two steps in case the block itself puts something
+      # in the @return_value ivar.
+      #
+      result		= block.call
+      @return_value	||= result
+    rescue Exception => exc
+      @exception_raised	= exc
+      @return_value	= nil
+    end
+    return @return_value
+  end
 
 end                             # module DumbLogger_TestSupport
 

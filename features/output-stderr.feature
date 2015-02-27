@@ -17,6 +17,10 @@ Feature: Test the output generated sent to stderr
     And stderr should contain exactly "a message\n"
     And stdout should contain exactly ""
 
+  Scenario: Closing a special sink should return false
+    When I invoke method "close"
+    Then the return value should be false
+
   Scenario: Single-line message sent to stdout
     When I set the sink to :$stdout
     And I invoke the logger with ("a message")

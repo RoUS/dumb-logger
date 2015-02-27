@@ -1,5 +1,5 @@
 @labels
-@masks
+@bitmasks
 Feature: Test reporting using labeled bitmasks
   In order to report using different methods,
   A developer

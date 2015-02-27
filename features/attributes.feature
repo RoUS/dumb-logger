@@ -29,11 +29,6 @@ Feature: Test default attributes and setting/pinging them
     Then the return value should be 5
     And the log-level should be 5
 
-  Scenario: Test setting the logging level to something bogus
-    When I set attribute loglevel to Object
-    Then it should raise an exception of type ArgumentError
-    And the log-level should be 0
-
   Scenario: Test setting the logging style
     When I set attribute level_style to DumbLogger::USE_BITMASK
     Then the return value should be DumbLogger::USE_BITMASK
@@ -58,4 +53,18 @@ Feature: Test default attributes and setting/pinging them
     When I set attribute 'sink' to :$stdout
     Then the return value should be :$stdout
     And the sink should be :$stdout
+
+  Scenario: Test the options reader
+    When I query attribute 'options'
+    Then the return value should be:
+      """
+      {
+        :labels		=> {},
+        :level_style	=> :loglevels_are_numbers,
+        :append		=> true,
+        :loglevel	=> 0,
+        :prefix		=> '',
+        :sink		=> :$stderr,
+      }
+      """
 
