@@ -1,42 +1,78 @@
 Given(/^I have a DumbLogger object$/) do
-  @duml					= DumbLogger.new
+  @duml			= DumbLogger.new
+end
+
+Given(/^I create a DumbLogger object using\s+(.*)$/) do |xval|
+  wrap_exception do
+    @duml		= DumbLogger.new(eval(xval))
+  end
+  @duml			= @return_value
+end
+
+Given(/^I create a DumbLogger object using:$/) do |xval|
+  wrap_exception do
+    @duml		= DumbLogger.new(eval(xval))
+  end
 end
 
 And(/^it is sinking to (\S+)$/) do |sink|
-  @return_value = @duml.sink		= eval(sink)
+  wrap_exception do
+    @duml.sink		= eval(sink)
+  end
 end
 
 And(/^the logging style is (\S+)$/) do |style|
-  @return_value = @duml.level_style	= DumbLogger.const_get(style)
+  wrap_exception do
+    @duml.level_style	= DumbLogger.const_get(style)
+  end
 end
 
 And(/^append mode is set to (\S+)$/) do |mode|
-  @return_value = @duml.append			= eval(mode)
+  wrap_exception do
+    @duml.append	= eval(mode)
+  end
 end
 
 And(/^the prefix is set to "([^"]*)"$/) do |prefix|
-  @return_value = @duml.prefix			= prefix
+  wrap_exception do
+    @duml.prefix	= prefix
+  end
 end
 
 And(/^the loglevel is set to (\S+)$/) do |level|
-  @return_value = @duml.loglevel		= level.to_i
+  wrap_exception do
+    @duml.loglevel	= level.to_i
+  end
 end
 
 And(/^I label (?:level|mask|bitmask) ((?:0d)?\d+|0x[[:xdigit:]]+|0b[01]+) with name "(.+)"$/) do |level,label|
-  @return_value = @duml.label_levels(eval("{#{label.to_sym.inspect}=>#{level}}"))
+  wrap_exception do
+    @duml.label_levels(eval("{#{label.to_sym.inspect}=>#{level}}"))
+  end
 end
 
 And(/^I label loglevels with:$/) do |labelhash|
-  @return_value = @duml.label_levels(eval("{#{labelhash}}"))
+  wrap_exception do
+    @duml.label_levels(eval("{#{labelhash}}"))
+  end
+end
+
+And(/^I label loglevels with\s+(.*[^:])$/) do |labelhash|
+  wrap_exception do
+    @duml.label_levels(eval("#{labelhash}"))
+  end
 end
 
 And(/^I invoke the logger with (\S*)\((.*)\)$/) do |label,args|
-  traffic = capture_streams(:$stdout, :$stderr) {
-    invocation = "@duml.#{label.empty? ? 'message' : label}(#{args})"
-    @return_value = eval(invocation)
-  }
-  @stdout_text = traffic[:$stdout]
-  @stderr_text = traffic[:$stderr]
+  wrap_exception do
+    traffic		= capture_streams(:$stdout, :$stderr) {
+      invocation	= "@duml.#{label.empty? ? 'message' : label}(#{args})"
+      @return_value	= eval(invocation)
+    }
+    @stdout_text	= traffic[:$stdout]
+    @stderr_text	= traffic[:$stderr]
+    @return_value
+  end
 end
 
 Then(/^stdout should contain exactly (.+)$/) do |xval|
@@ -59,6 +95,10 @@ Then(/^the return value should be (.*)$/) do |xval|
   expect(@return_value).to eq(eval(xval))
 end
 
+Then(/^the return value should be:$/) do |xval|
+  expect(@return_value).to eq(eval(xval))
+end
+
 Then(/^the return value should include ['"]?(.*)['"]?$/) do |xval|
   expect(@return_value).to match(%r!#{xval}!)
 end
@@ -69,6 +109,14 @@ end
 
 Then(/^the (?:log-level|logging-mask) should\s+(?:still)?\s*be ((?:0d)?\d+|0x[[:xdigit:]]+|0b[01]+)$/) do |xval|
   expect(@duml.loglevel).to eq(xval.to_i)
+end
+
+Then(/^the loglevel should be (.+)$/) do |xval|
+  expect(@duml.loglevel).to eq(eval(xval))
+end
+
+Then(/^the logmask should be (.+)$/) do |xval|
+  expect(@duml.logmask).to eq(eval(xval))
 end
 
 Then(/^the sink should be (.+)$/) do |xval|
@@ -88,15 +136,14 @@ Then(/^append-mode should be (.+)$/) do |xval|
 end
 
 When(/^I query (?:attribute|method) ["']?([_A-Za-z0-9?]+)["']?$/) do |attr|
-  @return_value = @duml.send(attr.to_sym)
+  wrap_exception do
+    @duml.send(attr.to_sym)
+  end
 end
 
 When(/^I set (?:attribute|the)?\s*["']?([_A-Za-z0-9]+)["']? to (.+?)$/) do |attr,val|
-  begin
-    @return_value	= @duml.send((attr + '=').to_sym, eval(val))
-  rescue Exception => e
-    @exception_raised	= e
-    @return_value	= nil
+  wrap_exception do
+    @duml.send((attr. + '=').to_sym, eval(val))
   end
 end
 

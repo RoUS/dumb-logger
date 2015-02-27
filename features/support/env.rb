@@ -119,3 +119,15 @@ module DumbLogger_TestSupport
 end                             # module DumbLogger_TestSupport
 
 include DumbLogger_TestSupport
+
+def wrap_exception(&block)
+  @exception_raised	= nil
+  @return_value		= nil
+  begin
+    result		= block.call
+    @return_value	||= result
+  rescue Exception => exc
+    @exception_raised	= exc
+  end
+end
+
