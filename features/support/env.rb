@@ -7,19 +7,28 @@ Proc.new {
 # Must load and start simplecov before any application code
 #
 require('json')
-require('simplecov')
-SimpleCov.start do
-  add_filter('/features/')
-  add_filter('/libexec')
-  add_filter('/lib/hll_active_record/')
-  add_filter('/test/')
-  add_filter('/tmp/')
+require('versionomy')
+
+if (Versionomy.ruby_version >= Versionomy.parse('1.9'))
+  require('simplecov')
+  SimpleCov.start do
+    add_filter('/features/')
+    add_filter('/libexec')
+    add_filter('/lib/hll_active_record/')
+    add_filter('/test/')
+    add_filter('/tmp/')
+  end
+  SimpleCov.command_name(ARGV.join(' '))
 end
-SimpleCov.command_name(ARGV.join(' '))
 
 require('dumb-logger')
 require('aruba/cucumber')
-require('debugger')
+
+if (Versionomy.ruby_version < Versionomy.parse('2.0.0'))
+  require('ruby-debug')
+else
+  require('debugger')
+end
 
 # @private
 #
