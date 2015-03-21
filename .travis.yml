@@ -18,7 +18,7 @@ notifications:
 
 before_install:
   - sudo apt-get update -qq
-  - gem install versionary
+  - gem install versionomy
 
 script:
   - bundle exec rake features
