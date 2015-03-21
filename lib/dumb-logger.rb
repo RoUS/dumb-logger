@@ -193,6 +193,39 @@ class DumbLogger
   #  => true
   #
 
+  # @!attribute [rw] defer_open
+  # @!parse attr_accessor :defer_open
+  #
+  # Controls when the sink is actually opened for writing.  Ordinarily
+  # the sink is opened when the logger is created or a new sink
+  # specified.  If this option is `true` however, the sink will not
+  # actually be opened until the first message is written to it.
+  #
+  # For instance, if the sink is a file, and *no* messages are
+  # written, then the file won't even be opened (or created).
+  #
+  # @note
+  #  This setting is only important when a sink is being activated,
+  #  such as `DumbLogger` object instantiation or because of a call to
+  #  {#sink=}.
+  #
+  # @return [Boolean]
+  #  Sets or returns the file defer-open-until-write control value.
+  #
+  public_flag(:defer_open)
+
+  # @!method defer_open?
+  #
+  # @return [Boolean]
+  #  Returns `true` if new sink files will not be opened until the
+  #  first write.
+  #
+  # @example
+  #  @daml = DumbLogger.new(:defer_open => true)
+  #  @daml.defer_open?
+  #  => true
+  #
+
   #
   # Allow the user to assign labels to different log levels or mask
   # combinations.  All labels will be downcased and converted to
@@ -396,6 +429,7 @@ class DumbLogger
   #
   CONSTRUCTOR_OPTIONS	= [
                            :append,
+                           :defer_open,
                            :labels,
                            :level_style,
                            :loglevel,
@@ -458,7 +492,7 @@ class DumbLogger
     end
     return nil
   end                           # def flush
-    
+
   # @since 1.0.2
   #
   # Close the current sink (if we opened it initially).
@@ -489,9 +523,12 @@ class DumbLogger
     # If the stream is already closed, do nothing.  Close it if it
     # isn't -- but either way, clear the `needs_close` flag.
     #
-    self.needs_close	= false
     if (@sink_io.respond_to?(:closed?))
-      @sink_io.close unless (@sink_io.closed?)
+      if (@sink_io.closed?)
+        raise IOError.new('sink stream is already closed')
+      end
+      @sink_io.close
+      self.needs_close	= false
       return true
     end
     return nil
@@ -517,7 +554,7 @@ class DumbLogger
     end
     return nil
   end                           # def flush
-    
+
   # @private
   # @since 1.0.2
   #
@@ -547,7 +584,7 @@ class DumbLogger
   #
   def reopen
     if (@sink_io.respond_to?(:closed?) && @sink_io.closed?)
-      raise IOError.new('sink stream is already closed') 
+      raise IOError.new('sink stream is already closed')
     end
     return false unless (self.needs_close? && self.sink.kind_of?(String))
     self.flush
@@ -726,7 +763,7 @@ class DumbLogger
     #
     self.level_style	= temp_opts.delete(:level_style)
     if (self.log_masks? && temp_opts.key?(:logmask))
-      temp_opts[:loglevel] = temp_opts[:logmask] 
+      temp_opts[:loglevel] = temp_opts[:logmask]
     end
     temp_opts.delete(:logmask)
     #

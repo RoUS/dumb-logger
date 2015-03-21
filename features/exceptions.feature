@@ -19,6 +19,12 @@ Feature: Test that all the things that *should* raise exceptions -- do.
     And I invoke method "reopen"
     Then it should raise an exception of type IOError
 
+  Scenario: Test trying to close something we already closed
+    When I set attribute "sink" to 'tmp/aruba/test-log'
+    And I invoke method "close"
+    And I invoke method "close"
+    Then it should raise an exception of type IOError
+
   Scenario: Test setting labels with a non-hash
     When I label loglevels with Object
     Then it should raise an exception of type ArgumentError
