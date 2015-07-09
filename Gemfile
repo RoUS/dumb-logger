@@ -11,15 +11,15 @@ RUBY_ENGINE	= 'ruby' unless (defined?(RUBY_ENGINE))
 group(:default, :development, :test) do
   gem('bundler',	'>= 1.0.7')
   gem('versionomy',	'>= 0.4.4')
-  gem('debugger',	'>= 0',
-      :platforms	=> [
-                            :mri_19,
-                            :mri_20,
-                           ])
-  gem('ruby-debug',	'>= 0',
-      :platforms	=> [
-                            :mri_18,
-                           ])
+  platforms(:mri_18) do
+    gem('ruby-debug',	'>= 0')
+  end
+  platforms(:mri_19) do
+    gem('debugger',	'>= 0')
+  end
+  platforms(:mri_20, :mri_21) do
+    gem('byebug',	'>= 0')
+  end
 
   gem('dumb-logger',
       :path		=> '.')

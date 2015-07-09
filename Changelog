@@ -1,6 +1,9 @@
 ```
 
 %changelog
+* Thu Dev 21 2017 Ken Coar <coar@apache.org> -
+- Updated yard version requirement per Github alert.  No code change.
+
 * Wed Feb 25 2015 Ken Coar <coar@apache.org> - 
 - Added more tests.
 

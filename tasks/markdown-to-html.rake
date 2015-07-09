@@ -1,5 +1,5 @@
 desc('Convert markdown files to HTML')
-task(:markup) do
+task(:markdown) do
   Dir['*.md'].each do |mdname|
     muname	= mdname.sub(%r!\.md$!, '.html')
     $stdout.print("Converting #{File.basename(mdname)}:")
