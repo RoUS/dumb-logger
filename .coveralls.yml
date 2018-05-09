@@ -1,0 +1,13 @@
+#
+# Config for Coveralls
+#
+---
+service_name: travis-pro
+repo_token: 6eTalPr6vmyFVHJpKkf2Dg
+
+# Local Variables:
+# mode: YAML
+# yaml-indent-offset: 2
+# indent-tabs-mode: nil
+# End:
+# vim:sw=2:ts=2:expandtab:textwidth=79:autoindent
