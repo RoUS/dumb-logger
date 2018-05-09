@@ -122,7 +122,7 @@ of command-line app debugging.  But now so much more!
     'simplecov'		=> [],
     'test-unit'		=> [],
     'yard'		=> [
-      '>= 0.8.2',
+      '>= 0.9.11',
     ],
   }
   #
