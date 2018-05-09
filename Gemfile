@@ -35,6 +35,8 @@ else
 
   group(:test, :development) do
     gem('aruba')
+    gem('coveralls',
+        :require	=> false)
     gem('cucumber')
     gem('json',		'>= 1.8.1')
     gem('rake',		'>= 10.0')

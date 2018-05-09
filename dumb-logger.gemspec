@@ -107,6 +107,7 @@ of command-line app debugging.  But now so much more!
   #
   needed4dev		= {
     'aruba'		=> [],
+    'coveralls'		=> [],
     'cucumber'		=> [],
     'json'		=> [
       '>= 1.8.1',

@@ -23,6 +23,8 @@ end
 
 require('dumb-logger')
 require('aruba/cucumber')
+require('coveralls')
+Coveralls.wear!
 
 if (Versionomy.ruby_version < Versionomy.parse('2.0.0'))
   require('ruby-debug')
