@@ -2,6 +2,7 @@
 
 [![Gem Version](https://badge.fury.io/rb/dumb-logger.svg)](http://badge.fury.io/rb/dumb-logger)
 [![Build Status](https://travis-ci.org/RoUS/dumb-logger.svg?branch=master)](https://travis-ci.org/RoUS/dumb-logger)
+[![Coverage Status](https://coveralls.io/repos/github/RoUS/dumb-logger/badge.svg)](https://coveralls.io/github/RoUS/dumb-logger)
 
 *As though there weren't enough Ruby gems for logging.. here's another one!*
 
