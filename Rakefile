@@ -19,8 +19,8 @@ require('rubygems')
 require('fileutils')
 
 Proc.new {
-  libdir = File.join(File.dirname(__FILE__), 'lib')
-  xlibdir = File.expand_path(libdir)
+  libdir	= File.join(File.dirname(__FILE__), 'lib')
+  xlibdir	= File.expand_path(libdir)
   $:.unshift(xlibdir) unless ($:.include?(libdir) || $:.include?(xlibdir))
 }.call
 
@@ -28,7 +28,7 @@ require('dumb-logger')
 
 require('rake')
 
-topdir = File.dirname(__FILE__)
+topdir		= File.dirname(__FILE__)
 
 include Rake::DSL
 
@@ -36,7 +36,7 @@ require('bundler/gem_tasks')
 
 require('rake/testtask')
 Rake::TestTask.new do |test|
-  test.libs << 'lib' << 'test'
+  test.libs	<< 'lib' << 'test'
   test.pattern	= 'test/**/test_*.rb'
   test.verbose	= true
 end

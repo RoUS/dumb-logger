@@ -22,9 +22,20 @@ Proc.new {
 }.call
 require('dumb-logger/version')
 
+unless (defined?(RUBY_ENGINE))
+  RUBY_ENGINE		= 'ruby'
+end
+unless (defined?(RUBY_VERSION_SEGS))
+  RUBY_VERSION_SEGS	= RUBY_VERSION.sub(%r![^\d.]!, '').split(%r!\.!).map { |s| s.to_i }
+  RUBY_XVERSION		= ('%02i.%02i.%02i' % RUBY_VERSION_SEGS)
+end
+
 Gem::Specification.new do |s|
   if (s.respond_to?(:required_rubygems_version=))
     s.required_rubygems_version = Gem::Requirement.new('>= 0')
+  end
+  if (s.respond_to?(:add_self_to_load_path))
+    s.add_self_to_load_path
   end
   s.name          	= 'dumb-logger'
   s.version       	= DumbLogger::VERSION
@@ -32,13 +43,13 @@ Gem::Specification.new do |s|
                            'Ken Coar',
                           ]
   s.email         	= [
-                           'kcoar@redhat.com',
+                           'Ken.Coar@GMail.Com',
                           ]
   s.summary       	= ("#{'%s-%s' % [ s.name, s.version, ]} - " +
                            'Primitive level/mask-driven stream logger.')
   s.description   	= <<-EOD
 Primitive no-frills level/mask-driven stream logger,
-originally developed to write messages to $stderr as part
+originally developed to write messages to `$stderr` as part
 of command-line app debugging.  But now so much more!
   EOD
   s.homepage      	= 'https://github.com/RoUS/dumb-logger'
@@ -55,49 +66,97 @@ of command-line app debugging.  But now so much more!
   s.test_files    	= s.files.grep(%r!^(test|spec|features)/!)
   s.has_rdoc		= true
   s.extra_rdoc_files	= [
-                           'README.md',
-                          ]
+    'README.md',
+  ]
   s.rdoc_options	= [
-                           '--main=README.md',
-                           '--charset=UTF-8',
-                          ]
+    '--main=README.md',
+    '--charset=UTF-8',
+  ]
   s.require_paths 	= [
-                           'lib',
-                          ]
+    'lib',
+  ]
 
   #
   # Make a hash for our dependencies, since we're using some fancy
   # code to declare them depending upon the version of the
   # environment.
   #
-  requirements_all	= {
-    'versionomy'	=> [
-                            '>= 0.4.3',
-                           ],
-  }
-  requirements_dev	= {
-    'aruba'		=> [],
+
+  #
+  # Added using #add_dependency
+  #
+  needed4all		= {}
+
+  #
+  # Added using #add_runtime_dependency, which is a superset of
+  # `needed4all`.
+  #
+  needed4runtime	= {
     'bundler'		=> [
-                            '~> 1.7',
-                           ],
+      '>= 1.7',
+    ],
+    'versionomy'	=> [
+      '>= 0.4.4',
+    ],
+  }
+  needed4runtime	= needed4all.merge(needed4runtime)
+
+  #
+  # Added using #add_development_dependency, which is a superset of
+  # `needed4runtime`.
+  #
+  needed4dev		= {
+    'aruba'		=> [],
     'cucumber'		=> [],
     'json'		=> [
-                            '>= 1.8.1',
-                           ],
+      '>= 1.8.1',
+    ],
     'rake'		=> [
-                            '~> 10.0',
-                           ],
+      '~> 10.0',
+    ],
     'rdiscount'		=> [],
     'yard'		=> [
-                            '>= 0.8.2',
-                           ],
+      '>= 0.8.2',
+    ],
   }
-
-  requirements_all.each do |gem,*vargs|
-    args	= [ gem ]
-    args.push(*vargs) unless (vargs.count.zero? || vargs[0].empty?)
-    s.add_dependency(*args)
+  #
+  # Pick the appropriate debugging tool.
+  #
+  if (RUBY_XVERSION < '01.09.00')
+    needed4dev['ruby-debug'] = '>= 0'
+  elsif (RUBY_XVERSION =~ %r!^01\.09..!)
+    needed4dev['debugger'] ='>= 0'
+  elsif (RUBY_XVERSION >= '02.00.00')
+    needed4dev['byebug'] = '>= 0'
   end
+  needed4dev		= needed4runtime.merge(needed4dev)
+
+  if (s.respond_to?(:add_runtime_dependency))
+    #
+    # If the version of the specification allows us to segregate
+    # global from runtime dependencies, do so.
+    #
+    needed4all.each do |gem,*vargs|
+      args		= [ gem ]
+      args.push(*vargs) unless (vargs.count.zero? || vargs[0].empty?)
+      s.add_dependency(*args)
+    end
+    needed4runtime.each do |gem,*vargs|
+      args		= [ gem ]
+      args.push(*vargs) unless (vargs.count.zero? || vargs[0].empty?)
+      s.add_runtime_dependency(*args)
+    end
+  else
+    #
+    # Otherwise, just add all the runtime dependencies as normal ones.
+    #
+    needed4runtime.each do |gem,*vargs|
+      args		= [ gem ]
+      args.push(*vargs) unless (vargs.count.zero? || vargs[0].empty?)
+      s.add_dependency(*args)
+    end
+  end                           # if (s.respond_to?(:add_runtime_dependency))
+    
 
   #
   # The following bit of hanky-panky was adapted from uuidtools-2.1.3.
@@ -113,7 +172,7 @@ of command-line app debugging.  But now so much more!
   else
     depmethod	= :add_dependency
   end
-  requirements_dev.each do |gem,*vargs|
+  needed4dev.each do |gem,*vargs|
     args	= [ gem ]
     args.push(*vargs) unless (vargs.count.zero? || vargs[0].empty?)
     s.send(depmethod, *args)

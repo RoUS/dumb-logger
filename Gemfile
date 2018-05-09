@@ -1,41 +1,50 @@
 source('https://rubygems.org/')
+require('byebug')
 
 #
 # All the dependencies *were* in dumb-logger.gemspec, but Bundler is
 # remarkably stupid about gems needed *by* the gemspec.
 #
-#gemspec
-
-RUBY_ENGINE	= 'ruby' unless (defined?(RUBY_ENGINE))
-
-group(:default, :development, :test) do
-  gem('bundler',	'>= 1.0.7')
-  gem('versionomy',	'>= 0.4.4')
-  platforms(:mri_18) do
-    gem('ruby-debug',	'>= 0')
+if (ENV.has_key?('use_gemspec'))
+  warn('Using gemspec for dependencies')
+  gemspec
+else
+  warn('Using Gemfile for dependencies')
+  unless (defined?(RUBY_ENGINE))
+    RUBY_ENGINE		= 'ruby'
   end
-  platforms(:mri_19) do
-    gem('debugger',	'>= 0')
-  end
-  platforms(:mri_20, :mri_21) do
-    gem('byebug',	'>= 0')
+  unless (defined?(RUBY_VERSION_SEGS))
+    RUBY_VERSION_SEGS	= RUBY_VERSION.sub(%r![^\d.]!, '').split(%r!\.!).map { |s| s.to_i }
+    RUBY_XVERSION	= ('%02i.%02i.%02i' % RUBY_VERSION_SEGS)
   end
 
-  gem('dumb-logger',
-      :path		=> '.')
-end
+  group(:default, :development, :test) do
+    gem('bundler',	'>= 1.0.7')
+    gem('versionomy',	'>= 0.4.4')
+    if (RUBY_XVERSION < '01.09.00')
+      gem('ruby-debug',	'>= 0')
+    elsif (RUBY_XVERSION =~ %r!^01\.09..!)
+      gem('debugger',	'>= 0')
+    elsif (RUBY_XVERSION >= '02.00.00')
+      gem('byebug',	'>= 0')
+    end
 
-group(:test, :development) do
-  gem('aruba')
-  gem('cucumber')
-  gem('json',		'>= 1.8.0')
-  gem('rake')
-  gem('simplecov',
-      :require		=> false)
-  gem('rdiscount')
-  gem('redcarpet',	'< 3.0.0')
-  gem('test-unit',
-      :require		=> 'test/unit')
-  gem('rdoc')
-  gem('yard',		'~> 0.8.6')
+    gem('dumb-logger',
+        :path		=> '.')
+  end                           # group(:default, :development, :test)
+
+  group(:test, :development) do
+    gem('aruba')
+    gem('cucumber')
+    gem('json',		'>= 1.8.1')
+    gem('rake')
+    gem('simplecov',
+        :require	=> false)
+    gem('rdiscount')
+    gem('redcarpet',	'< 3.0.0')
+    gem('test-unit',
+        :require	=> 'test/unit')
+    gem('rdoc')
+    gem('yard',		'~> 0.8.6')
+  end                           # group(:test, :development)
 end
