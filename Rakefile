@@ -26,13 +26,14 @@ Proc.new {
 
 require('dumb-logger')
 
+require('bundler/setup')
 require('rake')
 
 topdir		= File.dirname(__FILE__)
 
 include Rake::DSL
 
-require('bundler/gem_tasks')
+#require('bundler/gem_tasks')
 
 require('rake/testtask')
 Rake::TestTask.new do |test|

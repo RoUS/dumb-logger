@@ -15,14 +15,14 @@ Feature: Test reporting using labeled levels
     When I label level 0 with name "ok"
     And I invoke the logger with ok("a message")
     Then the return value should be 0
-    And stderr should contain exactly "a message\n"
+    And stderr should match this string "a message\n"
 
   Scenario: Assign 'ok' to level 0 and 'debug' to level 1
     When I label level 0 with name "ok"
     And I label level 1 with name "debug"
     And I invoke the logger with debug("a message")
     Then the return value should be 1
-    And stderr should contain exactly "a message\n"
+    And stderr should match this string "a message\n"
 
   Scenario: Assign 'ok' to level 0, 'debug' to 1, and 'silent' to 6
     When I label level 0 with name "ok"
@@ -30,7 +30,7 @@ Feature: Test reporting using labeled levels
     And I label level 6 with name "silent"
     And I invoke the logger with silent("a message")
     Then the return value should be nil
-    And stderr should contain exactly ""
+    And stderr should match this string ""
 
   Scenario: Check the label assignments
     When I label level 0 with name "ok"
@@ -45,13 +45,13 @@ Feature: Test reporting using labeled levels
     And I label level 3 with name "three"
     And I invoke the logger with message([:three,:one], 'a message')
     Then the return value should be 1
-    And stderr should contain exactly "a message\n"
+    And stderr should match this string "a message\n"
     And I invoke the logger with message([:three,:two], 'a message')
     Then the return value should be 2
-    And stderr should contain exactly "a message\n"
+    And stderr should match this string "a message\n"
     And I invoke the logger with message([:three,:two], 'a message', 99)
     Then the return value should be 2
-    And stderr should contain exactly "a message\n"
+    And stderr should match this string "a message\n"
 
   Scenario: Check that an array of labels supercedes an integer value
     When I label level 1 with name "one"
@@ -60,5 +60,5 @@ Feature: Test reporting using labeled levels
     And I set 'loglevel' to 1
     And I invoke the logger with message([:three,:two], 'a message', 0)
     Then the return value should be nil
-    And stderr should contain exactly ""
+    And stderr should match this string ""
 

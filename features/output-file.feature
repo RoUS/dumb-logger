@@ -143,7 +143,7 @@ Feature: Test the output generated and sent to a file
       a message
 
       """
-    And stderr should contain exactly "another message\n"
+    And stderr should match this string "another message\n"
 
   Scenario: Test a simple message sent to a file
     When I invoke the logger with ("a message")
@@ -154,8 +154,8 @@ Feature: Test the output generated and sent to a file
       a message
 
       """
-    And stderr should contain exactly ""
-    And stdout should contain exactly ""
+    And stderr should match this string ""
+    And stdout should match this string ""
 
   Scenario: Multi-line message sent to file
     When I invoke the logger with ("line 1","line 2")

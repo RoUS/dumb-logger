@@ -112,9 +112,15 @@ of command-line app debugging.  But now so much more!
       '>= 1.8.1',
     ],
     'rake'		=> [
-      '~> 10.0',
+      '>= 10.0',
     ],
     'rdiscount'		=> [],
+    'rdoc'		=> [],
+    'redcarpet'		=> [
+      '< 3.0.0',
+    ],
+    'simplecov'		=> [],
+    'test-unit'		=> [],
     'yard'		=> [
       '>= 0.8.2',
     ],

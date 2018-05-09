@@ -25,33 +25,25 @@ Feature: Test reporting using bitmasks
   Scenario: Default Level-0 1-liner text always gets sent and returns 0)
     When I invoke the logger with ("a message")
     Then the return value should be 0
-    And stderr should contain exactly "a message\n"
+    And stderr should match this string "a message\n"
 
   Scenario: Default Level-0 multi-line text always gets sent and returns 0
     When I invoke the logger with ("a message line 1","message line 2")
     Then the return value should be 0
-    And stderr should contain exactly:
-      """
-      a message line 1
-      message line 2
-
-      """
-      #
-      # Note the final blank line above indicating the trailing newline
-      #
+    And stderr should match this string "a message line 1\nmessage line 2\n"
 
   Scenario: Explicit out-of-mask message gets ignored and returns nil
     When I invoke the logger with (0b10010, "a message")
     Then the return value should be nil
-    And stderr should contain exactly ""
+    And stderr should match this string ""
 
   Scenario: Explicit out-of-mask multi-line text is ignored and returns nil
     When I invoke the logger with (0b10010, "message line 1", "message line 2")
     Then the return value should be nil
-    And stderr should contain exactly ""
+    And stderr should match this string ""
 
   Scenario: Explicit in-mask message is sent and the matching mask returned
     When I invoke the logger with (0b10111, "a message")
     Then the return value should be 0b00101
-    And stderr should contain exactly "a message\n"
+    And stderr should match this string "a message\n"
 

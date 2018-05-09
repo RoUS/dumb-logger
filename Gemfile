@@ -1,5 +1,5 @@
 source('https://rubygems.org/')
-require('byebug')
+#ENV['use_gemspec']	= 'true'
 
 #
 # All the dependencies *were* in dumb-logger.gemspec, but Bundler is
@@ -37,14 +37,14 @@ else
     gem('aruba')
     gem('cucumber')
     gem('json',		'>= 1.8.1')
-    gem('rake')
+    gem('rake',		'>= 10.0')
+    gem('rdiscount')
+    gem('rdoc')
+    gem('redcarpet',	'< 3.0.0')
     gem('simplecov',
         :require	=> false)
-    gem('rdiscount')
-    gem('redcarpet',	'< 3.0.0')
     gem('test-unit',
         :require	=> 'test/unit')
-    gem('rdoc')
     gem('yard',		'~> 0.8.6')
   end                           # group(:test, :development)
 end

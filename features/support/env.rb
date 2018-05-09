@@ -27,7 +27,7 @@ require('aruba/cucumber')
 if (Versionomy.ruby_version < Versionomy.parse('2.0.0'))
   require('ruby-debug')
 else
-  require('debugger')
+  require('byebug')
 end
 
 # @private
