@@ -1,6 +1,7 @@
 # DumbLogger
 
 [![Gem Version](https://badge.fury.io/rb/dumb-logger.svg)](http://badge.fury.io/rb/dumb-logger)
+[![Build Status](https://travis-ci.org/RoUS/dumb-logger)](http://badge.fury.io/rb/dumb-logger)
 
 *As though there weren't enough Ruby gems for logging.. here's another one!*
 
